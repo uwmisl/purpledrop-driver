@@ -1,0 +1,25 @@
+# Temporary files
+*.000
+*.bak
+*.bck
+*.sch-bak
+*.kicad_pcb-bak
+*~
+_autosave-*
+*.tmp
+*-cache.lib
+*-cache
+
+#check in rescue because i had to rescue some
+#eventually i'll fix that
+#*-rescue.lib
+*-save.pro
+*-save.kicad_pcb
+
+.DS_Store
+
+# Output packages
+*.deb
+
+# rust stuff
+target/
