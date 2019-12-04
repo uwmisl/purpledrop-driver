@@ -8,7 +8,7 @@ PACKAGE_NAME = purpledrop
 rustrelease:
 	cross build --release --target ${TARGET}
 
-package: rustrelease jsclient 
+package: rustrelease jsclient
 	rm -f ${PACKAGE_NAME}_${VERSION}_${ARCH}.deb;
 	fpm -a ${ARCH} -t deb -n ${PACKAGE_NAME} -v ${VERSION} -s dir \
 	./target/${TARGET}/release/pdd=/usr/bin/ \
@@ -19,6 +19,7 @@ package: rustrelease jsclient
 	rm -f pdd-service_${VERSION}_${ARCH}.deb
 	fpm -a ${ARCH} -t deb -n pdd-service -v ${VERSION} -s pleaserun -n pdd-service /usr/bin/pdd
 
-jsclient: 
-	cd jsclient; yarn build
-
+.PHONY: jsclient
+jsclient:
+	cd jsclient; npm install
+	cd jsclient; npm run build
