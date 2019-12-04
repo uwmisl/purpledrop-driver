@@ -28,17 +28,20 @@ clock = 22        # physical pin 15
 data = 23         # physical pin 16
 polarity_pwm_channel = 0
 
-[mcp4725]
-bus = 1
-address = 0x60
+# digital-to-analog converter
+# [mcp4725]
+# bus = 1
+# address = 0x60
 
-[pca9685]
-bus = 1
-address = 0x42
+# PWM controller
+# [pca9685]
+# bus = 1
+# address = 0x42
 
-[max31865]
-bus = 0
-select = 0
-n_samples = 10
-resist_ref = 4000.0
-resist_zero = 1000.0
+# temperature sensor
+# [max31865]
+# bus = 0
+# select = 0
+# n_samples = 10
+# resist_ref = 4000.0
+# resist_zero = 1000.0
