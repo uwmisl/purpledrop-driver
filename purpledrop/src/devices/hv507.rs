@@ -16,7 +16,6 @@ const N_PINS: usize = 128;
 #[derive(Debug, Deserialize)]
 pub struct Settings {
     pub frequency: f64,
-    pub duty_cycle: f64,
     pub pins: Pins,
     pub default_polarity: DefaultLevel,
 }
@@ -59,8 +58,12 @@ impl Settings {
             DefaultLevel::Low => pwm::Polarity::Normal,
             DefaultLevel::High => pwm::Polarity::Inverse,
         };
+        let frequency = 1.0;
+        let duty_cycle = 1.0;
 
-        let pwm = Pwm::with_frequency(chan, self.frequency, self.duty_cycle, pol, enabled)?;
+        // Initialize PWM output with 100% duty cycle, i.e. always on
+        // Frequency will be re-configured later based on settings
+        let pwm = Pwm::with_frequency(chan, frequency, duty_cycle, pol, enabled)?;
 
         let mut hv = Hv507 {
             blank: mk_output(self.pins.blank)?,
