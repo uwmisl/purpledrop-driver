@@ -7,12 +7,14 @@ This holds the hardware and software for PurpleDrop, a digital microfluidic devi
 ## Installing Raspbian
 
 First, flash a modern version of [Raspbian][] onto an SD card.
-The "lite" version should suffice.
+We have tested
+[this](https://downloads.raspberrypi.org/raspbian_full/images/raspbian_full-2019-09-30/2019-09-26-raspbian-buster-full.zip)
+image, but others will probably work.
 I use [Etcher][] to flash SD cards, but you can also [use `dd`][dd] from the command line.
 
 ## Editing the config
 
-After flashing, open the drive (which will be mounted as `/boot` on the pi) and copy over an `authorized_keys` file with ssh public keys in it.
+After flashing, open the drive (which will be mounted as `/boot` on the pi).
 Also, open `config.txt` and edit/uncomment it so that the following lines are there:
 ```
 dtparam=i2c_arm=on
@@ -20,7 +22,17 @@ dtparam=spi=on
 dtoverlay=pwm-2chan
 ```
 
+Make sure to also enable PWM for regular users (without `sudo`) according to these [instructions][pwm].
+
+You could also do this from the pi itself and reboot after.
+
+Now is also a good time to copy over an `authorized_keys` file with
+ssh public keys in it if you'd like.
+
 ## Initial pi setup
+
+These are nice things to do on a pi, but not required.
+You can just use the regular `pi` user.
 
 Plug in a keyboard and monitor to the pi and boot it.
 Using the Pi Configuration utility:
@@ -60,8 +72,10 @@ If you're joining the UW wifi, I'd just
 [register the MAC address][mac].
 You can find the MAC address by running `ip a` and looking for the line under `wlan0`.
 
-Now join your [ZeroTier][] network.
+### SSH
 
+If you want to connect to your pi remotely, I'd suggest [ZeroTier][] to get a stable ip address.
+Make an account and then join your network:
 ```shell
 # install zerotier
 curl -s https://install.zerotier.com/ | sudo bash
@@ -69,11 +83,12 @@ sudo zerotier-cli join <network>
 sudo zerotier-cli status
 ```
 
-Secure your SSH by setting `PasswordAuthentication no` in `/etc/ssh/sshd_config`. Make sure you can ssh in before you do this.
+Secure your SSH by setting `PasswordAuthentication no` in `/etc/ssh/sshd_config`.
+Make sure you can ssh in before you do this.
 
-Secure the VNC interface by opening it, going to the menu, options, and then connections. Set the rules to accept only from your ZeroTier subnet, and reject by default.
-
-Finally, enable PWM for regular users (without `sudo`) according to these [instructions][pwm].
+Secure the VNC interface by opening it, going to the menu, options,
+and then connections. Set the rules to accept only from your ZeroTier
+subnet, and reject by default.
 
 
 [raspbian]: https://www.raspberrypi.org/downloads/raspbian/
