@@ -5,6 +5,8 @@ ARCH ?= armhf
 VERSION ?= 0.1.0
 PACKAGE_NAME = purpledrop
 
+.PHONY: jsclient package rustrelease
+
 rustrelease:
 	cross build --release --target ${TARGET}
 
@@ -19,7 +21,6 @@ package: rustrelease jsclient
 	rm -f pdd-service_${VERSION}_${ARCH}.deb
 	fpm -a ${ARCH} -t deb -n pdd-service -v ${VERSION} -s pleaserun -n pdd-service /usr/bin/pdd
 
-.PHONY: jsclient
 jsclient:
 	cd jsclient; npm install
 	cd jsclient; npm run build
