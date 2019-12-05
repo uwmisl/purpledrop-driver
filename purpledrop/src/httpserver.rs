@@ -25,8 +25,8 @@ pub struct Server {
     threads: usize,
     #[structopt(long = "static", default_value = "/usr/share/purpledrop/webroot")]
     static_dir: String,
-    #[structopt(long = "config", default_value = "/etc/purpledrop/default.toml")]
-    config_file: String,
+    #[structopt(long = "config")]
+    config_file: Option<String>,
 }
 
 fn serve(req: Request<Body>, statik: &Static) -> RequestMiddlewareAction {
@@ -80,12 +80,15 @@ fn serve(req: Request<Body>, statik: &Static) -> RequestMiddlewareAction {
 
 impl Server {
     pub fn run(&self) -> std::result::Result<(), Box<dyn Error>> {
-        debug!("config_file: {}", self.config_file);
+        debug!("config_file: {:?}", self.config_file);
         debug!("static_dir: {}", self.static_dir);
         debug!("threads: {}", self.threads);
         debug!("address: {}", self.address);
 
-        let settings = Settings::from_file(&self.config_file)?;
+        let settings = match &self.config_file {
+            Some(path) => Settings::from_file(path)?,
+            None => Settings::new()?,
+        };
         debug!("Settings made!");
 
         let purpledrop = PurpleDropRpc::new(settings)?;

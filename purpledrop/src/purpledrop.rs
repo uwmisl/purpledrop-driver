@@ -17,10 +17,30 @@ pub struct Settings {
     pub max31865: Option<devices::max31865::Settings>,
 }
 
+pub static PD_CONFIG_VAR: &'static str = "PD_CONFIG";
+pub static PD_CONFIG_DEFAULT_PATH: &'static str = "/etc/purpledrop/default.toml";
+
 impl Settings {
     pub fn from_file(path: impl AsRef<Path>) -> StdResult<Self> {
         let s = std::fs::read_to_string(path).expect("Couldn't read config file");
         Ok(toml::from_str(&s)?)
+    }
+
+    pub fn new() -> StdResult<Self> {
+        let path = if let Some(path) = std::env::var_os(PD_CONFIG_VAR) {
+            if path.len() == 0 {
+                info!("{} empty, using default of {}", PD_CONFIG_VAR, PD_CONFIG_DEFAULT_PATH);
+                PD_CONFIG_DEFAULT_PATH.into()
+            } else {
+                info!("Using {}={:?}", PD_CONFIG_VAR, path);
+                path
+            }
+        } else {
+            info!("{} unset, using default of {}", PD_CONFIG_VAR, PD_CONFIG_DEFAULT_PATH);
+            PD_CONFIG_DEFAULT_PATH.into()
+        };
+
+        Settings::from_file(path)
     }
 }
 

@@ -78,12 +78,7 @@ fn main() -> RunResult<()> {
 
     let sub = SubCommand::from_args();
 
-    let conf_path = std::env::var("PD_CONFIG").map_err(|err| {
-        eprintln!("Please set environment variable PD_CONFIG");
-        err
-    })?;
-    println!("Using PD_CONFIG={}", conf_path);
-    let settings = Settings::from_file(conf_path)?;
+    let settings = Settings::new()?;
     debug!("Settings made!");
 
     let mut pd = PurpleDrop::new(settings)?;
