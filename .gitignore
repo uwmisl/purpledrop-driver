@@ -20,6 +20,7 @@ _autosave-*
 
 # Output packages
 *.deb
+deb/
 
 # rust stuff
 target/
