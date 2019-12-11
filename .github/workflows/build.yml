@@ -21,3 +21,8 @@ jobs:
       run: which cargo-deb || cargo install cargo-deb
     - name: Build Package
       run: make package
+    - uses: actions/upload-artifact@v1
+      with:
+        name: package
+        # the target path is hard-coded here, so if we change targets, this will have to change
+        path: target/armv7-unknown-linux-gnueabihf/debian/
