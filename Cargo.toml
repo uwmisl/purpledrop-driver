@@ -1,8 +1,50 @@
-[workspace]
+[package]
+name = "purpledrop"
+version = "0.1.0"
+authors = ["Max Willsey <me@mwillsey.com>"]
+edition = "2018"
+publish = false
+license = "MIT"
+readme = "README.md"
+description = "Software for the purpledrop DMF device"
 
-members = [
-    "purpledrop",
-]
+[dependencies]
+structopt = "0.3.5"
+log = "0.4.6"
+env_logger = "0.7"
+futures = "0.1"
+hyper-staticfile = "0.3.0"
+signal-hook = "0.1.9"
+serde = { version = "1", features = ["derive"] }
+serde_yaml = "0.8.9"
+toml = "0.5"
+jsonrpc-core = "14"
+jsonrpc-derive = "14"
+jsonrpc-http-server = "14"
+
+[target.'cfg(target_arch = "arm")'.dependencies]
+rppal = "0.11"
+
+[build-dependencies]
+chrono = "0.4"
 
 [profile.release]
 debug = true
+
+[package.metadata.deb]
+maintainer = "Max Willsey <me@mwillsey.com>"
+extended-description = """
+Software for the purpledrop DMF device, including a webserver
+"""
+depends = "$auto,systemd"
+assets = [
+    ["target/release/pdd",     "/usr/bin/",                  "755"],
+    ["target/release/pd-test", "/usr/bin/",                  "755"],
+    ["README.md",              "/usr/share/doc/purpledrop/", "644"],
+    ["config/default.toml",    "/etc/purpledrop/",           "644"],
+    ["config/pdd.service",     "/etc/systemd/system/",       "644"],
+
+    # it's not recursive, two levels will work for now
+    ["jsclient/dist/*",   "/usr/share/purpledrop/webroot/", "644"],
+    ["jsclient/dist/*/*", "/usr/share/purpledrop/webroot/", "644"],
+]

@@ -1,8 +1,7 @@
 
 TARGET ?= armv7-unknown-linux-gnueabihf
 ARCH ?= armhf
-# TODO: Need to get this version elsewhere
-VERSION ?= 0.1.0
+VERSION = $(shell git describe --always --dirty)
 PACKAGE_NAME = purpledrop
 
 PURPLEDROP_PACKAGE=deb/${PACKAGE_NAME}_${VERSION}_${ARCH}.deb
@@ -14,18 +13,7 @@ rustrelease:
 	cross build --release --target ${TARGET}
 
 package: rustrelease jsclient
-	mkdir -p deb
-	rm -f ${PURPLEDROP_PACKAGE}
-	fpm -p ${PURPLEDROP_PACKAGE} \
-	  -a ${ARCH} -t deb -n ${PACKAGE_NAME} -v ${VERSION} -s dir \
-	  ./target/${TARGET}/release/pdd=/usr/bin/ \
-	  ./target/${TARGET}/release/pd-test=/usr/bin/ \
-	  ./config/default.toml=/etc/purpledrop/ \
-	  ./jsclient/dist/=/usr/share/purpledrop/webroot
-
-	rm -f ${PDD_SERVICE_PACKAGE}
-	fpm -p ${PDD_SERVICE_PACKAGE} \
-	  -a ${ARCH} -t deb -n pdd-service -v ${VERSION} -s pleaserun -n pdd-service /usr/bin/pdd
+	cargo deb -v --target ${TARGET} --no-build --no-strip --deb-version=${VERSION}
 
 jsclient:
 	cd jsclient; npm install
