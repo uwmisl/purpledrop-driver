@@ -21,12 +21,15 @@ toml = "0.5"
 jsonrpc-core = "14"
 jsonrpc-derive = "14"
 jsonrpc-http-server = "14"
+prost = "0.5"
+bytes = "*"
 
 [target.'cfg(target_arch = "arm")'.dependencies]
 rppal = "0.11"
 
 [build-dependencies]
 chrono = "0.4"
+prost-build = "0.5"
 
 [profile.release]
 debug = true

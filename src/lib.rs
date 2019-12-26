@@ -2,6 +2,8 @@
 #![cfg_attr(not(target_arch = "arm"), allow(unused_variables))]
 #![cfg_attr(not(target_arch = "arm"), allow(dead_code))]
 
+include!(concat!(env!("OUT_DIR"), "/messages.rs"));
+
 pub mod board;
 pub mod httpserver;
 pub mod location;

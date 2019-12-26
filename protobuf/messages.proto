@@ -1,0 +1,52 @@
+syntax = 'proto3';
+
+package protobuf;
+
+message Timestamp {
+    int64 seconds = 1;
+    int32 nanos = 2;
+}
+
+message ElectrodeLayout {
+    Timestamp timestamp = 1;
+    string layout = 2;
+}
+
+message Settings {
+    Timestamp timestamp = 1;
+    float frequency = 2;
+}
+
+message ElectrodeState {
+    Timestamp timestamp = 1;
+    repeated bool electrodes = 2;
+}
+
+message ElectrodeCapacitance {
+    message Measurement {
+        float capacitance = 1;
+        bool drop_present = 2;
+    }
+    Timestamp timestamp = 1;
+    repeated Measurement measurements = 2;
+}
+
+message Image {
+    Timestamp timestamp = 1;
+    bytes image_data = 2;
+    int32 width = 3;
+    int32 height = 4;
+}
+
+message ImageTransform {
+    message Point {
+        int32 x = 1;
+        int32 y = 2;
+    }
+    message QrCodeLocation {
+        repeated Point corners = 1;
+    }
+    Timestamp timestamp = 1;
+    repeated float transform = 2;
+    repeated QrCodeLocation qr_codes = 3;
+}

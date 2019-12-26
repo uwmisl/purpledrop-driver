@@ -6,4 +6,7 @@ fn main() {
         .map(|out| String::from_utf8(out.stdout).unwrap())
         .unwrap_or_else(|_| "no git".to_owned());
     println!("cargo:rustc-env=PD_TEST_ABOUT={}_{}", date, sha);
+    prost_build::compile_protos(
+        &["protobuf/messages.proto"],
+        &["protobuf/"]).unwrap();
 }
