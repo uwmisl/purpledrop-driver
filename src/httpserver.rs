@@ -124,7 +124,7 @@ mod tests {
 
     #[test]
     fn test_parse() {
-        let args = "progname --static dir/ --address 1.2.3.4:9999 --grid dir/file.ext --threads 12";
+        let args = "progname --static dir/ --address 1.2.3.4:9999 --config dir/file.ext --threads 12";
         Server::from_iter(args.split_whitespace());
     }
 }
