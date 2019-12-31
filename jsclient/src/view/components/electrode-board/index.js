@@ -113,7 +113,7 @@ export default function() {
             }, true);
         },
         view: function(vnode) {
-            let board = vnode.attrs.board;
+            board = vnode.attrs.board;
             let electrodePolys = [];
 
             for(let row=0; row < board.height; row++) {
