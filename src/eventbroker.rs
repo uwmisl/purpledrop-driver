@@ -55,6 +55,12 @@ impl EventBroker {
     }
 }
 
+impl Clone for EventBroker {
+    fn clone(&self) -> EventBroker {
+        EventBroker{chan_in: self.chan_in.clone(), handlers: self.handlers.clone()}
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -82,6 +88,23 @@ mod tests {
         let last_msg = cout.recv().unwrap();
         match last_msg.msg.unwrap() {
             purple_drop_event::Msg::Settings(s) => assert_eq!(s.timestamp.unwrap().seconds, 100),
+            _ => panic!("Got unexpected message"),
+        }
+
+        // Check that we can send with a cloned broker
+        let mut broker2 = broker.clone();
+
+        let msg = PurpleDropEvent{
+            msg: Some(purple_drop_event::Msg::Settings(
+                    Settings{frequency: 10.0, timestamp: Some(Timestamp{seconds: 200, nanos: 11}) },
+            ))
+        };
+        broker2.send(msg);
+
+        // Check that we recieve the expected message
+        let last_msg = cout.recv().unwrap();
+        match last_msg.msg.unwrap() {
+            purple_drop_event::Msg::Settings(s) => assert_eq!(s.timestamp.unwrap().seconds, 200),
             _ => panic!("Got unexpected message"),
         }
     }
