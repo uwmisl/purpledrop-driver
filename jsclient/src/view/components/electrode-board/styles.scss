@@ -1,25 +1,31 @@
 .electrode-grid-wrapper {
-    padding: 10px;
-    background: purple;
+    position: relative;
+    display: inline-block;
+    transition: transform 150ms ease-in-out;
+    //padding: 10px;
     width: fit-content;
 }
-.electrode-grid {
-    width: 400px;
-    background: purple;
-
+.electrode-grid-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+.electrode-grid-img {
+    display: block;
+    max-width: 100%;
+    height: auto;
 }
 
 .toolbar {
     margin: 5px;
 }
 .electrode {
-    stroke: gold;
-    fill: gold;
-    stroke-width: 0.1;
+    fill: rgba(212, 175, 55, 0.3);
 }
-
 .electrode.active {
-    fill: red !important;
+    fill: rgba(255, 0, 0, 0.3) !important;
 }
 .electrode.hover {
     fill: black !important;
