@@ -57,7 +57,7 @@ impl From<Mode1> for u8 {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Settings {
     pub bus: u8,
     pub address: u16,

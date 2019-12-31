@@ -12,7 +12,7 @@ enum Command {
     WriteDacAndEeprom = 0b1100_0000,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Settings {
     pub bus: u8,
     pub address: u16,

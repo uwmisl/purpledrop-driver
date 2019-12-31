@@ -13,14 +13,14 @@ use crate::error::{Error, Result};
 
 const N_PINS: usize = 128;
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Settings {
     pub frequency: f64,
     pub pins: Pins,
     pub default_polarity: DefaultLevel,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Pins {
     pub blank: u8,
     pub latch_enable: u8,
@@ -29,7 +29,7 @@ pub struct Pins {
     pub polarity_pwm_channel: u8,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum DefaultLevel {
     Low,

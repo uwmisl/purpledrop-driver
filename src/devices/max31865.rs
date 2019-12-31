@@ -63,7 +63,7 @@ pub const DEFAULT_CONFIG: u8 = {
     VBias as u8 | ConversionMode as u8
 };
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Settings {
     pub bus: u8,
     pub select: u8,
