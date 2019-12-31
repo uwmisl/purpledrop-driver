@@ -5,8 +5,9 @@ use log::*;
 
 use purpledrop::{
     location::{yx, Location, Rectangle},
-    purpledrop::{PurpleDrop, Settings},
+    purpledrop::{PurpleDrop},
 };
+use purpledrop::settings::Settings;
 
 #[derive(Debug, Clone, Copy)]
 struct MyDuration(std::time::Duration);

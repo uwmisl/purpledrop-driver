@@ -3,7 +3,7 @@ use jsonrpc_derive::rpc;
 use std::sync::{Arc, Mutex};
 
 use crate::purpledrop::PurpleDrop;
-use crate::purpledrop::Settings;
+use crate::settings::Settings;
 
 use crate::board::Board;
 

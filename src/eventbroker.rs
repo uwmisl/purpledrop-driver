@@ -48,7 +48,6 @@ impl EventBroker {
                 for h in &mut *handlers {
                     h(*event.clone());
                 }
-                println!("Got an event")
             }
         });
         EventBroker{chan_in, handlers: handlers.clone()}

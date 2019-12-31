@@ -11,6 +11,7 @@ pub mod eventbroker;
 pub mod httpserver;
 pub mod location;
 pub mod purpledrop_rpc;
+pub mod settings;
 
 pub mod devices;
 pub mod purpledrop;

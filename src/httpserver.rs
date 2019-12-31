@@ -6,7 +6,7 @@ use jsonrpc_http_server::{
     RequestMiddlewareAction, ServerBuilder,
 };
 
-use crate::purpledrop::Settings;
+use crate::settings::Settings;
 
 use hyper_staticfile::Static;
 use structopt::StructOpt;
