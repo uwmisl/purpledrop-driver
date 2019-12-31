@@ -50,3 +50,13 @@ message ImageTransform {
     repeated float transform = 2;
     repeated QrCodeLocation qr_codes = 3;
 }
+
+message PurpleDropEvent {
+    oneof msg {
+        ElectrodeLayout electrode_layout = 1;
+        ElectrodeState electrode_state = 2;
+        Image image = 3;
+        ImageTransform image_transform = 4;
+        Settings settings = 5;
+    }
+}
