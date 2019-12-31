@@ -43,10 +43,19 @@ impl EventBroker {
         let thread_handlers = handlers.clone();
         let thread = thread::spawn(move || {
             loop {
-                let event = chan_out.recv().unwrap();
-                let mut handlers = thread_handlers.lock().unwrap();
-                for h in &mut *handlers {
-                    h(*event.clone());
+                let event = chan_out.recv();
+                match event {
+                    Ok(event) => {
+                        let mut handlers = thread_handlers.lock().unwrap();
+                        for h in &mut *handlers {
+                            h(*event.clone());
+                        }
+                    },
+                    Err(_) => {
+                        // If we get an error, that means all senders for this channel are destroyed. 
+                        // Exit the thread quietly
+                        return
+                    },
                 }
             }
         });
