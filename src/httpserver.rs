@@ -1,19 +1,24 @@
 use std::error::Error;
 
+use bytes::buf::BufMut;
+
 use jsonrpc_core::IoHandler;
 use jsonrpc_http_server::{
     hyper::{Body, Method, Request, Response},
     RequestMiddlewareAction, ServerBuilder,
 };
 
-use crate::settings::Settings;
-
+use prost::Message;
 use hyper_staticfile::Static;
 use structopt::StructOpt;
 
 use futures::Future;
 
+use crate::settings::Settings;
+use crate::eventbroker::EventBroker;
 use crate::purpledrop_rpc::{PurpleDropRpc, Rpc};
+use crate::websocket::Broadcaster;
+use crate::video_client::VideoClient;
 
 use log::*;
 
@@ -71,7 +76,9 @@ pub fn run(settings: Settings) -> std::result::Result<(), Box<dyn Error>> {
     debug!("threads: {}", settings.daemon.threads);
     debug!("address: {}", settings.daemon.address);
 
-    let purpledrop = PurpleDropRpc::new(settings.clone())?;
+    let mut eventbroker = EventBroker::new();
+
+    let purpledrop = PurpleDropRpc::new(settings.clone(), eventbroker.clone())?;
 
     debug!("PurpleDrop created.");
 
@@ -88,8 +95,25 @@ pub fn run(settings: Settings) -> std::result::Result<(), Box<dyn Error>> {
         .start_http(&settings.daemon.address)
         .expect("Unable to start RPC server");
 
-    debug!("Server created.");
+    debug!("HTTP server created.");
 
+    
+    let ws = Broadcaster::new(settings.daemon.websocket)?;
+    eventbroker.add_handler(move |event| {
+        let mut buf = vec![];
+        event.encode_length_delimited(&mut buf).unwrap();
+        ws.broadcast(&buf).unwrap();
+    });
+    debug!("Websocket server created.");
+    
+    let video_client;
+    if settings.daemon.video_host.is_some() {
+        let video_host = settings.daemon.video_host.unwrap();
+        video_client = VideoClient::new(eventbroker.clone(), video_host);
+        video_client.start();
+        debug!("Video client created.");
+    }
+    
     server.wait();
 
     info!("Shutting down");

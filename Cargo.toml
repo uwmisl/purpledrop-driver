@@ -23,6 +23,8 @@ jsonrpc-derive = "14"
 jsonrpc-http-server = "14"
 prost = "0.5"
 bytes = "*"
+ws = "*"
+reqwest = { version = "0.10", features = ["blocking", "json"] }
 
 [target.'cfg(target_arch = "arm")'.dependencies]
 rppal = "0.11"

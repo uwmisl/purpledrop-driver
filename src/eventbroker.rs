@@ -1,13 +1,20 @@
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{channel, Sender};
 use std::thread;
+use std::time::SystemTime;
 
 use crate::protobuf::PurpleDropEvent as EventMessage;
+use crate::protobuf::Timestamp;
 
 type HandlersArray = Arc<Mutex<Vec<Box<dyn FnMut(EventMessage) ->() + Send>>>>;
 
+pub fn timestamp_now() -> Timestamp {
+    //let timespec = time::SteadyTime::now().get_time();
+    let duration = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
+    Timestamp{seconds: duration.as_secs() as i64, nanos: duration.subsec_nanos() as i32}
+}
+
 pub struct EventBroker {
-    chan_in: Sender<Box<EventMessage>>,
     handlers: HandlersArray,
 }
 
@@ -37,41 +44,19 @@ impl EventBroker {
     }
 
     pub fn new() -> EventBroker {
-        let (chan_in, chan_out) = channel::<Box<EventMessage>>();
         let handlers: HandlersArray = Arc::new(Mutex::new(Vec::new()));
-        // Create a clone for the thread closure
-        let thread_handlers = handlers.clone();
-        let thread = thread::spawn(move || {
-            loop {
-                let event = chan_out.recv();
-                match event {
-                    Ok(event) => {
-                        let mut handlers = thread_handlers.lock().unwrap();
-                        for h in &mut *handlers {
-                            h(*event.clone());
-                        }
-                    },
-                    Err(_) => {
-                        // If we get an error, that means all senders for this channel are destroyed. 
-                        // Exit the thread quietly
-                        return
-                    },
-                }
-            }
-        });
-        EventBroker{chan_in, handlers: handlers.clone()}
+        EventBroker{handlers: handlers.clone()}
     }
 }
 
 impl Clone for EventBroker {
     fn clone(&self) -> EventBroker {
-        EventBroker{chan_in: self.chan_in.clone(), handlers: self.handlers.clone()}
+        EventBroker{handlers: self.handlers.clone()}
     }
 }
 
 #[cfg(test)]
 mod tests {
-
     use crate::eventbroker::*;
     use crate::protobuf::*;
     #[test]

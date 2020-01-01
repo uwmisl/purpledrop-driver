@@ -12,6 +12,8 @@ pub mod httpserver;
 pub mod location;
 pub mod purpledrop_rpc;
 pub mod settings;
+pub mod websocket;
+pub mod video_client;
 
 pub mod devices;
 pub mod purpledrop;

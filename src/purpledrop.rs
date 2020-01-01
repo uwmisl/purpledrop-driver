@@ -4,7 +4,6 @@ use crate::{board::Board, devices};
 use crate::settings::Settings;
 
 use log::*;
-use std::path::Path;
 type BoxedStdError = Box<dyn std::error::Error>;
 type StdResult<T, E = BoxedStdError> = std::result::Result<T, E>;
 

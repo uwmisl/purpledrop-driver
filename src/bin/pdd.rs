@@ -16,6 +16,8 @@ pub struct Opts {
     static_dir: Option<String>,
     #[structopt(long = "config")]
     config_file: Option<String>,
+    #[structopt(long = "video")]
+    video_host: Option<std::net::SocketAddr>,
 }
 
 fn main() {
@@ -42,6 +44,9 @@ fn main() {
     }
     if opts.static_dir.is_some() {
         settings.daemon.static_dir = opts.static_dir.unwrap();
+    }
+    if opts.video_host.is_some() {
+        settings.daemon.video_host = opts.video_host;
     }
 
     httpserver::run(settings).unwrap();

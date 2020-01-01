@@ -34,8 +34,6 @@ message ElectrodeCapacitance {
 message Image {
     Timestamp timestamp = 1;
     bytes image_data = 2;
-    int32 width = 3;
-    int32 height = 4;
 }
 
 message ImageTransform {
@@ -49,6 +47,8 @@ message ImageTransform {
     Timestamp timestamp = 1;
     repeated float transform = 2;
     repeated QrCodeLocation qr_codes = 3;
+    int32 image_width = 4;
+    int32 image_height = 5;
 }
 
 message PurpleDropEvent {

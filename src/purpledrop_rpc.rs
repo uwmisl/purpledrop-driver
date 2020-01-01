@@ -4,10 +4,13 @@ use std::sync::{Arc, Mutex};
 
 use crate::purpledrop::PurpleDrop;
 use crate::settings::Settings;
-
+use crate::eventbroker::EventBroker;
 use crate::board::Board;
-
 use crate::error::Result;
+use crate::protobuf:: {
+    {PurpleDropEvent, ElectrodeState, Timestamp},
+    purple_drop_event::Msg,
+};
 
 pub struct RpcError(i32);
 
@@ -30,12 +33,14 @@ impl From<RpcError> for Error {
 
 pub struct PurpleDropRpc {
     purpledrop: Arc<Mutex<PurpleDrop>>,
+    eventbroker: Arc<Mutex<EventBroker>>,
 }
 
 impl PurpleDropRpc {
-    pub fn new(settings: Settings) -> Result<PurpleDropRpc> {
+    pub fn new(settings: Settings, eventbroker: EventBroker) -> Result<PurpleDropRpc> {
         let new_rpc = PurpleDropRpc {
             purpledrop: Arc::new(Mutex::new(PurpleDrop::new(settings)?)),
+            eventbroker: Arc::new(Mutex::new(eventbroker)),
         };
         Ok(new_rpc)
     }
@@ -64,6 +69,10 @@ impl Rpc for PurpleDropRpc {
         let arc = self.purpledrop.clone();
         let mut pd = arc.lock().unwrap();
         pd.output_pins(&pin_array);
+        let msg = ElectrodeState{timestamp: Some(Timestamp{seconds: 0, nanos: 0}), electrodes: pin_array};
+        let event = PurpleDropEvent{msg: Some(Msg::ElectrodeState(msg))};
+        let mut eventbroker = self.eventbroker.lock().unwrap();
+        eventbroker.send(event);
         Ok(())
     }
 }
