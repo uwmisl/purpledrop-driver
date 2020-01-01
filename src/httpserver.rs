@@ -101,7 +101,7 @@ pub fn run(settings: Settings) -> std::result::Result<(), Box<dyn Error>> {
     let ws = Broadcaster::new(settings.daemon.websocket)?;
     eventbroker.add_handler(move |event| {
         let mut buf = vec![];
-        event.encode_length_delimited(&mut buf).unwrap();
+        event.encode(&mut buf).unwrap();
         ws.broadcast(&buf).unwrap();
     });
     debug!("Websocket server created.");
