@@ -10,22 +10,28 @@ export default function() {
         let row = position[1];
         let col = position[0];
         console.log(`Clicked pin ${board.grid[row][col].pin} @ ${row}, ${col}`);
+        var newBoard;
         if(!e.shiftKey) {
-            board.deactivateAll();
+            newBoard = board.deactivateAll();
+        } else {
+            newBoard = board.clone();
         }
         for(var x=0; x<brushSize; x++) {
             for(var y=0; y<brushSize; y++) {
-                board.activate(row+y, col+x);
+                if(newBoard.isActive(row + y, col + x)) {
+                    newBoard = newBoard.deactivate(row + y, col + x);
+                } else {
+                    newBoard = newBoard.activate(row + y, col + x);
+                }
             }
         }
-        board.writeToDevice();
+        Pd.setElectrodePins(newBoard.activePinList());
     };
 
     let move = (xdelta, ydelta) => {
         console.log('move: ', xdelta, ydelta);
-        board.move(xdelta, ydelta);
-        m.redraw();
-        board.writeToDevice();
+        let newBoard = board.move(xdelta, ydelta);
+        Pd.setElectrodePins(newBoard.activePinList());
     };
 
     let onMouseOut = () => {
@@ -146,7 +152,7 @@ export default function() {
                     <button class="brushsize" onclick={() => incrementBrushSize()}>Bigger</button>
                 </div>
                 <div class='electrode-grid-wrapper'>
-                    {/* TODO: /latest is a lot of requests and the browser seems to work very hard. 
+                    {/* TODO: /latest is a lot of requests and the browser seems to work very hard.
                      the MJPEG route doesn't recover well from errors. Need to resolve this still... */}
                     {/* <img class='electrode-grid-img' src={Video.latestFrame} /> */}
                     <img class='electrode-grid-img' src='http://10.144.112.21:5000/video' />

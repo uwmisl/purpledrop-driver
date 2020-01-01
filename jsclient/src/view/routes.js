@@ -4,7 +4,7 @@ import PageLayout from './components/page-layout';
 import IndexPage from './pages/landing-page';
 import Splash from './components/splash-loader/index';
 import MaintenancePage from './components/maintenance-layout/index';
-import BoardConfig from '../models/BoardConfig';
+import Pd from '../models/Pd';
 
 function loadSpinner() {
     let $splashDiv = document.getElementById('splash');
@@ -35,7 +35,7 @@ const Routes = {
             loadSpinner();
             return new Promise((resolve /*, reject*/) => {
                 //Fetch all necessary data here
-                BoardConfig.loadConfig().then(() => resolve());
+                Pd.init().then(() => resolve());
                 // setTimeout(function() {
                 //     //m.render($root, null);
                 //     resolve();

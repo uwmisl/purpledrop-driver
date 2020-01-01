@@ -1,5 +1,7 @@
-
+import Board from './Board';
 import jsonRpc from 'simple-jsonrpc-js';
+import {protobuf} from 'protobuf';
+
 
 // Hook-up transport for simple-jsonrpc-js
 let rpc = new jsonRpc();
@@ -16,11 +18,48 @@ rpc.toStream = (msg) => {
     });
 };
 
-const Pd = {
-    getBoardDefinition: () => {
+function persistent_socket() {
+    let eventsocket = new WebSocket(`ws://${location.hostname}:2129`);
+    eventsocket.onclose = () => {
+        console.log('WebSocket closed. Will attempt reconnect.');
+        setTimeout(persistent_socket, 5000);
+    };
+    eventsocket.onerror = (error) => {
+        console.log('Websocket error: ', error);
+    };
+    eventsocket.onmessage = (event) => {
+        event.data.arrayBuffer().then((buf) => {
+            let data = new Uint8Array(buf);
+            let msg = protobuf.PurpleDropEvent.decode(data);
+            console.log(msg);
+            handle_event(msg);
+        });
+    };
+}
+
+persistent_socket();
+
+function handle_event(event) {
+    if (event.electrodeState) {
+        Pd.board = new Board(Pd.board.config, event.electrodeState.electrodes);
+        m.redraw();
+    }
+}
+
+
+export const Pd = {
+    board: null,
+
+    init() {
+        return this.getBoardDefinition()
+            .then((config) => {
+                Pd.board = new Board(config);
+            });
+    },
+    getBoardDefinition() {
         return rpc.call('get_board_definition');
     },
-    setElectrodePins: (pins) => {
+    setElectrodePins(pins) {
         // Send a list of activated pin numbers, e.g. [4, 2, 100] will enable
         // electrode outputs 4, 2, and 100 while disabling all others. 
         return rpc.call('set_electrode_pins', [pins]);

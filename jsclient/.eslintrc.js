@@ -29,4 +29,5 @@ module.exports = {
         'no-console': 0,
         'rest-spread-spacing': ["error", "never"],
     },
+    ignorePatterns: ['protobuf.js'],
 };

@@ -1,6 +1,9 @@
 # compiled output
 /dist
 
+# protobuf auto-generated module
+src/protobuf.js
+
 # dependencies
 /node_modules
 /bower_components

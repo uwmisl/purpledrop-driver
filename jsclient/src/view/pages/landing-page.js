@@ -1,5 +1,4 @@
 import ElectrodeBoard from '../components/electrode-board';
-import BoardConfig from '../../models/BoardConfig';
 import {Pd, Video} from '../../models/Pd';
 
 export default function() {
@@ -19,7 +18,7 @@ export default function() {
                 <div>
                     <h2>Purple Drop</h2>
                     <p>On the fly drop control</p>
-                    <ElectrodeBoard board={BoardConfig.board} />
+                    <ElectrodeBoard board={Pd.board} />
                 </div>
             );
         },
