@@ -24,7 +24,7 @@ module.exports = {
             m: 'mithril' //Global access
         }),
         new WebpackShellPlugin({
-            onBuildStart:['yarn run pbjs -t static-module -w commonjs ../protobuf/messages.proto -o src/protobuf.js'],
+            onBuildStart:['yarn run pbjs -t static-module -w es6 ../protobuf/messages.proto -o src/protobuf.js'],
         }),
     ],
 };
