@@ -1,18 +1,8 @@
 import ElectrodeBoard from '../components/electrode-board';
-import {Pd, Video} from '../../models/Pd';
+import {Pd} from '../../models/Pd';
 
 export default function() {
     return {
-        oninit() {
-            // Start periodic video information update polling
-            let updateFn = () => {
-                Video.update().then(() => { m.redraw(); });
-                setTimeout(updateFn, 500);
-            };
-
-            setTimeout(updateFn, 1000);
-        },
-
         view() {
             return (
                 <div>

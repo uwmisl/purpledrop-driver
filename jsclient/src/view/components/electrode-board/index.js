@@ -1,5 +1,5 @@
 import './styles.scss';
-import {Pd, Video} from '../../../models/Pd';
+import {Pd} from '../../../models/Pd';
 
 export default function() {
     var board = null;
@@ -128,15 +128,15 @@ export default function() {
                     let position = [col, row];
                     if(cell.pin !== null) {
                         let transform = null;
-                        if (Video.latestTransform) {
+                        if (Pd.Video.isTransformValid()) {
                             transform = Video.latestTransform;
                         } else {
                             // If no transform, just create a default to put the grid into the center of the img div
                             // Although transform is not, Video.imageWidth/imageHeight should always be valid
-                            let scale = Math.min(Video.imageWidth, Video.imageHeight) / Math.max(board.width, board.height) * 0.8;
+                            let scale = Math.min(Pd.Video.imageWidth, Pd.Video.imageHeight) / Math.max(board.width, board.height) * 0.8;
                             transform = [
-                                [scale, 0.0, (Video.imageWidth - board.width * scale) / 2],
-                                [0.0, scale, (Video.imageHeight - board.height * scale) / 2],
+                                [scale, 0.0, (Pd.Video.imageWidth - board.width * scale) / 2],
+                                [0.0, scale, (Pd.Video.imageHeight - board.height * scale) / 2],
                                 [0.0, 0.0, 1.0],
                             ];
                         }
@@ -152,11 +152,8 @@ export default function() {
                     <button class="brushsize" onclick={() => incrementBrushSize()}>Bigger</button>
                 </div>
                 <div class='electrode-grid-wrapper'>
-                    {/* TODO: /latest is a lot of requests and the browser seems to work very hard.
-                     the MJPEG route doesn't recover well from errors. Need to resolve this still... */}
-                    {/* <img class='electrode-grid-img' src={Video.latestFrame} /> */}
-                    <img class='electrode-grid-img' src='http://10.144.112.21:5000/video' />
-                    <svg class='electrode-grid-svg' viewBox={`0 0 ${Video.imageWidth} ${Video.imageHeight}`}>
+                    <img class='electrode-grid-img' src={Pd.Video.isFrameValid() ? Pd.Video.latestFrame : ''} />
+                    <svg class='electrode-grid-svg' viewBox={`0 0 ${Pd.Video.imageWidth} ${Pd.Video.imageHeight}`}>
                         {electrodePolys}
                     </svg>
                 </div>

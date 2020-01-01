@@ -44,11 +44,61 @@ function handle_event(event) {
         Pd.board = new Board(Pd.board.config, event.electrodeState.electrodes);
         m.redraw();
     }
+    else if(event.image) {
+        let oldUrl = Pd.Video.latestFrame;
+        let blob = new Blob([event.image.imageData]);
+        Pd.Video.latestFrame = URL.createObjectURL(blob);
+        URL.revokeObjectURL(oldUrl);
+        Pd.Video.latestFrameTimestamp = Date.now();
+        m.redraw();
+    } else if(event.imageTransform) {
+        if (event.imageTransform.transform.length > 0) {
+            let t =  event.imageTransform.transform;
+            Pd.Video.latestTransform = [
+                [t[0], t[1], t[2]],
+                [t[3], t[4], t[5]],
+                [t[6], t[7], t[8]],
+            ];
+        } else {
+            Pd.Video.latestTransform = null;
+        }
+
+        Pd.Video.imageWidth = event.imageTransform.imageWidth;
+        Pd.Video.imageHeight = event.imageTransform.imageHeight;
+        m.redraw();
+    }
 }
 
+const Video = {
+    DATA_TIMEOUT: 5000, // ms
+    latestFrame: null,
+    latestFrameTimestamp: Date.now(),
+    latestTransform: null,
+    latestTransformTimestamp: Date.now(),
+    imageWidth: 1024,
+    imageHeight: 768,
+
+    isFrameValid() {
+        let age = Date.now() - Video.latestFrameTimestamp;
+        if(Video.latestFrame == null || age > Video.DATA_TIMEOUT) {
+            return false;
+        }
+        return true;
+    },
+
+    isTransformValid() {
+        let age = Date.now() - Video.latestTransformTimestamp;
+        if (Video.latestTransform == null || age > Video.DATA_TIMEOUT) {
+            return false;
+        }
+        return true;
+    },
+};
 
 export const Pd = {
     board: null,
+
+    Video: Video,
 
     init() {
         return this.getBoardDefinition()
@@ -61,53 +111,8 @@ export const Pd = {
     },
     setElectrodePins(pins) {
         // Send a list of activated pin numbers, e.g. [4, 2, 100] will enable
-        // electrode outputs 4, 2, and 100 while disabling all others. 
+        // electrode outputs 4, 2, and 100 while disabling all others.
         return rpc.call('set_electrode_pins', [pins]);
-    },
-};
-
-const video_host = 'http://10.144.112.21:5000';
-
-export const Video = {
-    lastFrameNum: 0,
-    latestFrame: null,
-    latestTransform: null,
-    imageWidth: 1024,
-    imageHeight: 768,
-
-    update: () => {
-        // return Promise.all([
-        //     Video.getLatestFrame(),
-        //     Video.getLatestTransform()]);
-        return Video.getLatestTransform();
-    },
-    getLatestFrame: () => {
-        return fetch(video_host + '/latest', {
-            method: 'GET',
-            headers: {
-                'X-Min-Frame-Number': Video.lastFrameNum + 1,
-            },
-        }).then((response) => {
-            Video.lastFrameNum = parseInt(response.headers.get('X-Frame-Number') || 0);
-            return response.blob();
-        }).then((blob) => {
-            Video.latestFrame = URL.createObjectURL(blob);
-        }).catch(error => {
-            console.error('Error fetching frame: ' + error);
-        });
-    },
-    getLatestTransform: () => {
-        return fetch(video_host + '/transform', {
-            method: 'GET',
-        }).then((response) => {
-            return response.json();
-        }).then((json) => {
-            Video.latestTransform = json.transform;
-            Video.imageWidth = json.image_width;
-            Video.imageHeight = json.image_height;
-        }).catch(error => {
-            console.error('Error fetching transform: ' + error);
-        });
     },
 };
 
