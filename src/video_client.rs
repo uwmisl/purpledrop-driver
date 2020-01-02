@@ -13,7 +13,6 @@ use log::*;
 
 use serde::Deserialize;
 
-use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -96,6 +95,11 @@ fn client_thread(host: SocketAddr, state: Arc<Mutex<State>>, eventbroker: Arc<Mu
             Ok(_) => (),
             Err(e) => {
                 warn!("Failed to retrieve video info: {:?}", e);
+                // If we fail to read, reset the frame counter to 0. 
+                // If the server restarted, the frame counter will have too,
+                // and if it didn't, we just might get a duplicate frame
+                let mut state = state.lock().unwrap();
+                state.last_frame = 0;
                 thread::sleep(Duration::from_millis(5000));
             },
         }
