@@ -62,7 +62,7 @@ function handle_event(event) {
         } else {
             Pd.Video.latestTransform = null;
         }
-
+        Pd.Video.latestTransformTimestamp = Date.now();
         Pd.Video.imageWidth = event.imageTransform.imageWidth;
         Pd.Video.imageHeight = event.imageTransform.imageHeight;
         m.redraw();

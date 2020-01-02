@@ -129,7 +129,7 @@ export default function() {
                     if(cell.pin !== null) {
                         let transform = null;
                         if (Pd.Video.isTransformValid()) {
-                            transform = Video.latestTransform;
+                            transform = Pd.Video.latestTransform;
                         } else {
                             // If no transform, just create a default to put the grid into the center of the img div
                             // Although transform is not, Video.imageWidth/imageHeight should always be valid
