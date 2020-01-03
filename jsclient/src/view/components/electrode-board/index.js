@@ -146,16 +146,16 @@ export default function() {
             }
 
             return <div>
-                <div class="toolbar">
-                    <button class="brushsize" onclick={() => decrementBrushSize()}>Smaller</button>
-                    <input id="brushsize" type="text" disabled value={brushSize} name="brushsize" />
-                    <button class="brushsize" onclick={() => incrementBrushSize()}>Bigger</button>
-                </div>
                 <div class='electrode-grid-wrapper'>
                     <img class='electrode-grid-img' src={Pd.Video.isFrameValid() ? Pd.Video.latestFrame : ''} />
                     <svg class='electrode-grid-svg' viewBox={`0 0 ${Pd.Video.imageWidth} ${Pd.Video.imageHeight}`}>
                         {electrodePolys}
                     </svg>
+                </div>
+                <div class="toolbar">
+                    <button class="brushsize" onclick={() => decrementBrushSize()}>Smaller</button>
+                    <input id="brushsize" type="text" disabled value={brushSize} name="brushsize" />
+                    <button class="brushsize" onclick={() => incrementBrushSize()}>Bigger</button>
                 </div>
             </div>;
         },

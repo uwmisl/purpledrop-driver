@@ -31,7 +31,6 @@ function persistent_socket() {
         event.data.arrayBuffer().then((buf) => {
             let data = new Uint8Array(buf);
             let msg = protobuf.PurpleDropEvent.decode(data);
-            console.log(msg);
             handle_event(msg);
         });
     };

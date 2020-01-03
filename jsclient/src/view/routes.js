@@ -23,13 +23,8 @@ function hideSpinner() {
     }
 }
 
-const Routes = {
-    '/splash': {
-        render: function() {
-            return m(PageLayout, m(Splash));
-        },
-    },
-    '/index': {
+const index_page = (compact) => {
+    return {
         onmatch() {
             // Show Loader until the promise has been resolved or rejected.
             loadSpinner();
@@ -52,9 +47,19 @@ const Routes = {
                 //If onmatch returns a component or a promise that resolves to a component, comes here.
                 return vnode;
             }
-            return m(PageLayout, m(IndexPage));
+            return m(PageLayout, m(IndexPage, {compact: compact}));
+        },
+    };
+};
+
+const Routes = {
+    '/splash': {
+        render: function() {
+            return m(PageLayout, m(Splash));
         },
     },
+    '/index': index_page(false),
+    '/compact': index_page(true),
 };
 
 const DefaultRoute = '/index';
