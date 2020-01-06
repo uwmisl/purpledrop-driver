@@ -1,6 +1,4 @@
 use std::sync::{Arc, Mutex};
-use std::sync::mpsc::{channel, Sender};
-use std::thread;
 use std::time::SystemTime;
 
 use crate::protobuf::PurpleDropEvent as EventMessage;

@@ -9,7 +9,7 @@ use rppal::{
     pwm::{self, Pwm},
 };
 
-use crate::error::{Error, Result};
+use crate::error::{Error, HardwareError, Result};
 
 const N_PINS: usize = 128;
 
@@ -51,7 +51,7 @@ impl Settings {
         let chan = match self.pins.polarity_pwm_channel {
             0 => pwm::Channel::Pwm0,
             1 => pwm::Channel::Pwm1,
-            n => return Err(Error::InvalidPwmChannel(n)),
+            n => return Err(Error::new(HardwareError::InvalidPwmChannel(n))),
         };
         let enabled = true;
         let pol = match self.default_polarity {

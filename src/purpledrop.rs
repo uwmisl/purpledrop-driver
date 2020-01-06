@@ -4,8 +4,6 @@ use crate::{board::Board, devices};
 use crate::settings::Settings;
 
 use log::*;
-type BoxedStdError = Box<dyn std::error::Error>;
-type StdResult<T, E = BoxedStdError> = std::result::Result<T, E>;
 
 #[cfg(not(target_arch = "arm"))]
 pub struct PurpleDrop {

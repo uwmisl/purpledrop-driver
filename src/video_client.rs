@@ -1,12 +1,10 @@
 use crate::eventbroker::{EventBroker, timestamp_now};
-use crate::error::Result;
+use crate::error::{Result};
 use crate::protobuf:: {
     PurpleDropEvent,
     purple_drop_event::Msg,
     Image,
     ImageTransform,
-    image_transform::Point,
-    image_transform::QrCodeLocation,
 };
 
 use log::*;
@@ -79,7 +77,6 @@ fn update(host: SocketAddr, state: &mut State, eventbroker: &mut EventBroker, ht
 }
 
 fn client_thread(host: SocketAddr, state: Arc<Mutex<State>>, eventbroker: Arc<Mutex<EventBroker>>) {
-    let last_frame = 0;
     let http = reqwest::blocking::Client::new();
     loop {
         let result;

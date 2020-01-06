@@ -1,7 +1,5 @@
 use std::error::Error;
 
-use bytes::buf::BufMut;
-
 use jsonrpc_core::IoHandler;
 use jsonrpc_http_server::{
     hyper::{Body, Method, Request, Response},
@@ -10,7 +8,6 @@ use jsonrpc_http_server::{
 
 use prost::Message;
 use hyper_staticfile::Static;
-use structopt::StructOpt;
 
 use futures::Future;
 

@@ -1,3 +1,7 @@
+use anyhow;
+pub type Error = anyhow::Error;
+pub type Result<T> = anyhow::Result<T>;
+
 macro_rules! impl_error {
     ($error:ident, $inner:ty, $variant:ident) => {
         impl From<$inner> for $error {
@@ -9,7 +13,7 @@ macro_rules! impl_error {
 }
 
 #[derive(Debug)]
-pub enum Error {
+pub enum HardwareError {
     Gpio(rppal::gpio::Error),
     I2c(rppal::i2c::Error),
     Pwm(rppal::pwm::Error),
@@ -17,25 +21,25 @@ pub enum Error {
     InvalidPwmChannel(u8),
 }
 
-impl std::error::Error for Error {}
+impl std::error::Error for HardwareError {}
 
-pub type Result<T> = std::result::Result<T, Error>;
+//pub type Result<T> = std::result::Result<T, Error>;
 
-impl_error!(Error, rppal::gpio::Error, Gpio);
-impl_error!(Error, rppal::i2c::Error, I2c);
-impl_error!(Error, rppal::pwm::Error, Pwm);
-impl_error!(Error, rppal::spi::Error, Spi);
+impl_error!(HardwareError, rppal::gpio::Error, Gpio);
+impl_error!(HardwareError, rppal::i2c::Error, I2c);
+impl_error!(HardwareError, rppal::pwm::Error, Pwm);
+impl_error!(HardwareError, rppal::spi::Error, Spi);
 
 use std::fmt;
 
-impl fmt::Display for Error {
+impl fmt::Display for HardwareError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Error::Gpio(inner) => write!(f, "{}", inner),
-            Error::I2c(inner) => write!(f, "{}", inner),
-            Error::Pwm(inner) => write!(f, "{}", inner),
-            Error::Spi(inner) => write!(f, "{}", inner),
-            Error::InvalidPwmChannel(chan) => write!(f, "Invalid PWM channel: {}", chan),
+            HardwareError::Gpio(inner) => write!(f, "{}", inner),
+            HardwareError::I2c(inner) => write!(f, "{}", inner),
+            HardwareError::Pwm(inner) => write!(f, "{}", inner),
+            HardwareError::Spi(inner) => write!(f, "{}", inner),
+            HardwareError::InvalidPwmChannel(chan) => write!(f, "Invalid PWM channel: {}", chan),
         }
     }
 }
