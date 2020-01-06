@@ -1,6 +1,6 @@
 import Board from './Board';
 import jsonRpc from 'simple-jsonrpc-js';
-import {protobuf} from 'protobuf';
+import {protobuf} from '../protobuf';
 
 
 // Hook-up transport for simple-jsonrpc-js
