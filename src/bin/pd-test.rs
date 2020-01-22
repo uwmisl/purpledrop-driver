@@ -8,6 +8,7 @@ use purpledrop::{
     purpledrop::{PurpleDrop},
 };
 use purpledrop::settings::Settings;
+use purpledrop::eventbroker::EventBroker;
 
 #[derive(Debug, Clone, Copy)]
 struct MyDuration(std::time::Duration);
@@ -82,7 +83,9 @@ fn main() -> RunResult<()> {
     let settings = Settings::new()?;
     debug!("Settings made!");
 
-    let mut pd = PurpleDrop::new(settings)?;
+    let event_broker = EventBroker::new();
+
+    let mut pd = PurpleDrop::new(settings, event_broker)?;
     debug!("PurpleDrop made!");
 
     use SubCommand::*;

@@ -1,4 +1,5 @@
 use crate::error::Result;
+use crate::eventbroker::EventBroker;
 use crate::location::{Location, Rectangle};
 use crate::{board::Board, devices};
 use crate::settings::Settings;
@@ -13,19 +14,33 @@ pub struct PurpleDrop {
 #[cfg(target_arch = "arm")]
 pub struct PurpleDrop {
     pub board: Board,
-    pub hv507: devices::hv507::Hv507,
+    pub driver: Box<dyn devices::driver::Driver>,
     pub mcp4725: Option<devices::mcp4725::Mcp4725>,
     pub pca9685: Option<devices::pca9685::Pca9685>,
     pub max31865: Option<devices::max31865::Max31865>,
 }
 
+
 impl PurpleDrop {
-    pub fn new(settings: Settings) -> Result<PurpleDrop> {
+    pub fn new(settings: Settings, event_broker: EventBroker) -> Result<PurpleDrop> {
         trace!("Initializing purpledrop...");
+
+        let mut driver: Box<dyn devices::driver::Driver>;
+        #[cfg(target_arch="arm")]
+        {
+        if settings.pd_driver.is_some() {
+            driver = Box::new(settings.pd_driver.unwrap().make(event_broker)?);
+        } else if cfg!(target_arch = "arm") && settings.hv507.is_some() {
+            driver = Box::new(settings.hv507.unwrap().make()?);
+        } else {
+            panic!("Must provide either an hv507 or pddriver config section");
+        }
+        }
+
         let pd = PurpleDrop {
             board: settings.board.clone(),
             #[cfg(target_arch = "arm")]
-            hv507: settings.hv507.make()?,
+            driver: driver,
             #[cfg(target_arch = "arm")]
             mcp4725: settings.mcp4725.map(|s| s.make()).transpose()?,
             #[cfg(target_arch = "arm")]
@@ -50,7 +65,7 @@ impl PurpleDrop {
     /// * `f` - Floating point frequency in Hz
     pub fn set_frequency(&mut self, f: f64) -> Result<()> {
         #[cfg(target_arch = "arm")]
-        self.hv507.set_polarity(f)?;
+        self.driver.set_frequency(f)?;
         Ok(())
     }
 
@@ -161,14 +176,14 @@ impl PurpleDrop {
 
         #[cfg(target_arch = "arm")]
         {
-            self.hv507.clear_pins();
+            self.driver.clear_pins();
             for (i, on) in pins.iter().enumerate() {
                 if *on {
-                    self.hv507.set_pin_hi(i);
+                    self.driver.set_pin_hi(i);
                 }
             }
 
-            self.hv507.shift_and_latch();
+            self.driver.shift_and_latch();
         }
     }
 

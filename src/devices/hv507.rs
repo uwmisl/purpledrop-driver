@@ -2,6 +2,7 @@ use std::time::{Duration, Instant};
 
 use log::*;
 use serde::Deserialize;
+use crate::devices::driver::Driver;
 
 #[cfg(target_arch = "arm")]
 use rppal::{
@@ -9,7 +10,7 @@ use rppal::{
     pwm::{self, Pwm},
 };
 
-use crate::error::{Error, HardwareError, Result};
+use crate::error::{Error, Result};
 
 const N_PINS: usize = 128;
 
@@ -39,6 +40,7 @@ pub enum DefaultLevel {
 #[cfg(target_arch = "arm")]
 impl Settings {
     pub fn make(&self) -> Result<Hv507> {
+        use crate::error::HardwareError;
         trace!("Initializing pi gpio...");
         let gpio = Gpio::new()?;
 
@@ -109,16 +111,20 @@ impl Hv507 {
         self.data.set_low();
 
         // now call the public function to set the HV507 polarity pin
-        self.set_polarity(settings.frequency)?;
+        self.set_frequency(settings.frequency)?;
 
         Ok(())
     }
+}
+
+#[cfg(target_arch = "arm")]
+impl Driver for Hv507 {
     /// Set the frequency of the polarity pin
     ///
     /// If frequency is < 0.5, then the polarity pin will be left in the HIGH
     /// state so that enabled electrodes are driven with high voltage DC, and
     /// the top plate remains grounded.
-    pub fn set_polarity(&mut self, frequency: f64) -> Result<()> {
+    fn set_frequency(&mut self, frequency: f64) -> Result<()> {
         // The PWM driver appears to support up to 2^31 ns period, or ~0.5 Hz.
         // When a frequency less than that is requested, we will set the duty
         // cycle to 100%, to ensure that the output is always high.
@@ -133,26 +139,26 @@ impl Hv507 {
         Ok(())
     }
 
-    pub fn clear_pins(&mut self) {
+    fn clear_pins(&mut self) {
         for pin in self.pins.iter_mut() {
             *pin = Level::Low;
         }
     }
 
-    pub fn set_pin(&mut self, pin: usize, value: bool) {
+    fn set_pin(&mut self, pin: usize, value: bool) {
         use Level::*;
         self.pins[pin] = if value { High } else { Low };
     }
 
-    pub fn set_pin_hi(&mut self, pin: usize) {
+    fn set_pin_hi(&mut self, pin: usize) {
         self.set_pin(pin, true)
     }
 
-    pub fn set_pin_lo(&mut self, pin: usize) {
+    fn set_pin_lo(&mut self, pin: usize) {
         self.set_pin(pin, false)
     }
 
-    pub fn shift_and_latch(&mut self) {
+    fn shift_and_latch(&mut self) {
         let spin_duration = Duration::from_micros(1);
         let start = Instant::now();
         for pin in self.pins.iter() {

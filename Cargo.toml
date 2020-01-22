@@ -21,11 +21,13 @@ toml = "0.5"
 jsonrpc-core = "14"
 jsonrpc-derive = "14"
 jsonrpc-http-server = "14"
-prost = "0.5"
-bytes = "*"
+prost = "0.6"
+bytes = "0.5"
 ws = "*"
 reqwest = { version = "0.10", features = ["blocking", "json"] }
 anyhow = "1.0"
+serialport = { version = "3.3", default-features = false }
+pd-driver-messages = {path = "./pd-driver-messages"}
 
 [target.'cfg(target_arch = "arm")'.dependencies]
 rppal = "0.11"

@@ -22,13 +22,22 @@ message ElectrodeState {
     repeated bool electrodes = 2;
 }
 
-message ElectrodeCapacitance {
-    message Measurement {
-        float capacitance = 1;
-        bool drop_present = 2;
-    }
+message CapacitanceMeasurement {
+    float capacitance = 1;
+    bool drop_present = 2;
+}
+
+// Capacitance measurements for all electrodes
+message BulkCapacitance {
     Timestamp timestamp = 1;
-    repeated Measurement measurements = 2;
+    repeated CapacitanceMeasurement measurements = 2;
+}
+
+// Capacitance measurement for the currently active electrodes (combined into
+// a single quantity)
+message ActiveCapacitance {
+    Timestamp timestamp = 1;
+    CapacitanceMeasurement measurement = 2;
 }
 
 message Image {
@@ -58,5 +67,7 @@ message PurpleDropEvent {
         Image image = 3;
         ImageTransform image_transform = 4;
         Settings settings = 5;
+        BulkCapacitance bulk_capacitance = 6;
+        ActiveCapacitance active_capacitance = 7;
     }
 }

@@ -39,7 +39,7 @@ pub struct PurpleDropRpc {
 impl PurpleDropRpc {
     pub fn new(settings: Settings, eventbroker: EventBroker) -> Result<PurpleDropRpc> {
         let new_rpc = PurpleDropRpc {
-            purpledrop: Arc::new(Mutex::new(PurpleDrop::new(settings)?)),
+            purpledrop: Arc::new(Mutex::new(PurpleDrop::new(settings, eventbroker.clone())?)),
             eventbroker: Arc::new(Mutex::new(eventbroker)),
         };
         Ok(new_rpc)
