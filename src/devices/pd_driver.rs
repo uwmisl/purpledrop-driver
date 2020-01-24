@@ -6,8 +6,10 @@ use log::*;
 
 use pd_driver_messages::{
     Parser,
+    serialize,
     messages::{
         Message,
+        ELECTRODE_ENABLE_ID,
         ElectrodeEnableStruct,
         ActiveCapacitanceStruct,
     },
@@ -16,6 +18,7 @@ use pd_driver_messages::{
 use crate::devices::driver::Driver;
 use crate::error::Result;
 use crate::eventbroker::{EventBroker, timestamp_now};
+use crate::protobuf;
 
 // Number of electrodes controlled by the driver
 const N_PINS: usize = 128;
@@ -46,28 +49,71 @@ pub struct PdDriver {
     pins: [bool; N_PINS],
 }
 
-fn receive_thread(broker: EventBroker, mut port: Box<dyn SerialPort>) {
+struct BulkMeasurementCollector {
+    values: [u16; N_PINS],
+}
+
+impl BulkMeasurementCollector {
+    pub fn add_measurements(&mut self, start_index: usize, values: Vec<u16>, event_broker: &mut EventBroker) {
+        for (i, v) in values.iter().enumerate() {
+            self.values[i + start_index] = *v;
+        }
+
+        // When setting the last message, fire off the event
+        if start_index + values.len() == N_PINS {
+            let measurements: Vec<protobuf::CapacitanceMeasurement> = self.values.iter().map( |v| {
+                protobuf::CapacitanceMeasurement{capacitance: *v as f32, drop_present: false} 
+            }).collect();
+            let msg = protobuf::BulkCapacitance{
+                timestamp: Some(timestamp_now()),
+                measurements: measurements
+            };
+            let event = protobuf::PurpleDropEvent{msg: Some(protobuf::purple_drop_event::Msg::BulkCapacitance(msg))};
+            event_broker.send(event);
+        }
+    }
+}
+
+fn receive_thread(mut broker: EventBroker, mut port: Box<dyn SerialPort>) {
     let mut parser: Parser = Parser::new();
-    
+    let mut bulk_collector = BulkMeasurementCollector{values: [0; N_PINS]};
+    info!("Running pd-driver receive thread");
     loop {
         let mut buf = [0u8; 16];
         let result = port.read(&mut buf);
         if let Err(e) = result {
-            warn!("Error reading from serial port: {:?}", e);
+            match e.kind() {
+                std::io::ErrorKind::TimedOut => (),
+                _ => {warn!("Error reading from serial port: {:?}", e); ()}
+            }
             continue;
         }
         let readlen = result.unwrap();
         if readlen == 0 {
             continue;
         }
-
         for i in 0..readlen {
             match parser.parse(buf[i]) {
                 Some(msg) => {
                     match msg {
                         Message::ActiveCapacitanceMsg(msg) => {
-                            info!("Active Capacitance: {}, {}", msg.baseline, msg.measurement);
+                            // TODO: Get QR codes from server and return
+                            let pbmsg = protobuf::ActiveCapacitance{
+                                timestamp: Some(timestamp_now()),
+                                measurement: Some(protobuf::CapacitanceMeasurement{
+                                    capacitance: (msg.measurement - msg.baseline) as f32,
+                                    drop_present: false,
+                                }),
+                            };
+                            let event = protobuf::PurpleDropEvent{msg: Some(protobuf::purple_drop_event::Msg::ActiveCapacitance(pbmsg))};
+                            //broker.send(event);
+                            //info!("Active Capacitance: {}, {}", msg.baseline, msg.measurement);
                         },
+                        Message::BulkCapacitanceMsg(msg) => {
+                            bulk_collector.add_measurements(msg.start_index as usize, msg.values, &mut broker);
+                            info!("Bulk Capacitance!");
+
+                        }
                         _ => (),
                     }
                 },
@@ -79,7 +125,9 @@ fn receive_thread(broker: EventBroker, mut port: Box<dyn SerialPort>) {
 
 impl PdDriver {
     pub fn new(port: Box<dyn SerialPort>, event_broker: EventBroker) -> PdDriver {
-        PdDriver { port: port, event_broker, pins: [false; N_PINS] }
+        let obj = PdDriver { port: port, event_broker, pins: [false; N_PINS] };
+        obj.init();
+        obj
     }
 
     pub fn init(&self) {
@@ -125,12 +173,13 @@ impl Driver for PdDriver {
         for i in 0..N_PINS {
             if self.pins[i] {
                 let word = i / 8;
-                let bit = i % 8;
+                let bit = 7 - (i % 8);
                 values[word] |= 1<<bit;
             }
         }
         let msg = ElectrodeEnableStruct{values};
-        let tx_bytes: Vec<u8> = msg.into();
+        let payload: Vec<u8> = msg.into();
+        let tx_bytes: Vec<u8> = serialize(ELECTRODE_ENABLE_ID, &payload);
         self.port.write_all(&tx_bytes).unwrap();
     }
 }

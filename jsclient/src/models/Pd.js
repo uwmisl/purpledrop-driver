@@ -65,6 +65,8 @@ function handle_event(event) {
         Pd.Video.imageWidth = event.imageTransform.imageWidth;
         Pd.Video.imageHeight = event.imageTransform.imageHeight;
         m.redraw();
+    } else if(event.bulkCapacitance) {
+        Pd.capacitances = event.bulkCapacitance.measurements.map((m) => m.capacitance);
     }
 }
 
@@ -96,10 +98,13 @@ const Video = {
 
 export const Pd = {
     board: null,
-
+    capacitances: [],
     Video: Video,
 
     init() {
+        for(var i=0; i<128; i++) {
+            Pd.capacitances[i] = 0.0;
+        }
         return this.getBoardDefinition()
             .then((config) => {
                 Pd.board = new Board(config);

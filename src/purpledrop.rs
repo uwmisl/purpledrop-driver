@@ -25,12 +25,15 @@ impl PurpleDrop {
     pub fn new(settings: Settings, event_broker: EventBroker) -> Result<PurpleDrop> {
         trace!("Initializing purpledrop...");
 
-        let mut driver: Box<dyn devices::driver::Driver>;
+        let driver: Box<dyn devices::driver::Driver>;
         #[cfg(target_arch="arm")]
         {
         if settings.pd_driver.is_some() {
-            driver = Box::new(settings.pd_driver.unwrap().make(event_broker)?);
+            let pd_driver_settings = settings.pd_driver.unwrap();
+            info!("Using pd-driver on port {}", pd_driver_settings.port);
+            driver = Box::new(pd_driver_settings.make(event_broker)?);
         } else if cfg!(target_arch = "arm") && settings.hv507.is_some() {
+            info!("Using HV507 driver");
             driver = Box::new(settings.hv507.unwrap().make()?);
         } else {
             panic!("Must provide either an hv507 or pddriver config section");

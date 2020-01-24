@@ -49,9 +49,11 @@ export default function() {
         }
     };
 
-    let createElectrode = (position, active, hover, M) => {
+    let createElectrode = (position, active, hover, drop_present, M) => {
         let cstr = hover ? 'electrode hover' : (active ? 'electrode active' : 'electrode');
-
+        if(drop_present) {
+            cstr += " present";
+        }
         const cornerOffset = 0.1;
 
         // Points in grid coordinates, where each electrode's top-left corner
@@ -140,7 +142,8 @@ export default function() {
                                 [0.0, 0.0, 1.0],
                             ];
                         }
-                        electrodePolys.push(createElectrode(position, cell.active, hoverPositions[position], transform));
+                        let drop_present = Pd.capacitances[cell.pin] > 400;
+                        electrodePolys.push(createElectrode(position, cell.active, hoverPositions[position], drop_present, transform));
                     }
                 }
             }

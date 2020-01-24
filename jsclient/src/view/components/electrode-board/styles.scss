@@ -67,10 +67,16 @@ img.uw-logo {
     fill: rgba(212, 175, 55, 0.3);
 }
 .electrode.active {
-    fill: rgba(255, 0, 0, 0.3) !important;
+    stroke: rgba(255, 0, 0, 0.3);
+    fill: rgba(255, 0, 0, 0.3);
 }
+
 .electrode.hover {
     fill: black !important;
+}
+
+.electrode.present {
+    fill: rgba(0, 255, 0, 0.3) !important;
 }
 
 button.brushsize {
