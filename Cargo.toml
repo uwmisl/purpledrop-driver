@@ -27,7 +27,7 @@ ws = "*"
 reqwest = { version = "0.10", features = ["blocking", "json"] }
 anyhow = "1.0"
 serialport = { version = "3.3", default-features = false }
-pd-driver-messages = {path = "./pd-driver-messages"}
+pd-driver-messages = {version = "0.1.0", git = "https://github.com/mcbridejc/pd-driver-messages"}
 
 [target.'cfg(target_arch = "arm")'.dependencies]
 rppal = "0.11"
