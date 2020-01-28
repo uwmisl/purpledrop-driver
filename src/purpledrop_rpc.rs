@@ -2,7 +2,9 @@ use jsonrpc_core::{Error, ErrorCode};
 use jsonrpc_derive::rpc;
 use std::sync::{Arc, Mutex};
 
-use crate::purpledrop::PurpleDrop;
+use log::*;
+
+use crate::purpledrop::{MoveDropResult, PurpleDrop};
 use crate::settings::Settings;
 use crate::eventbroker::EventBroker;
 use crate::board::Board;
@@ -11,23 +13,22 @@ use crate::protobuf:: {
     {PurpleDropEvent, ElectrodeState, Timestamp},
     purple_drop_event::Msg,
 };
+use crate::location::{Direction, Location};
 
-pub struct RpcError(i32);
+pub struct RpcError(i32, String);
 
 type RpcResult<T> = std::result::Result<T, RpcError>;
 
 impl From<i32> for RpcError {
     fn from(p_err: i32) -> Self {
-        Self(p_err)
+        Self(p_err, "".to_string())
     }
 }
 
 impl From<RpcError> for Error {
     fn from(p_err: RpcError) -> Self {
-        let code = ErrorCode::ServerError(0);
-        let mut err = Error::new(code);
-        err.message = format!("PuddleError: {:?}", p_err.0);
-        err
+        let code = ErrorCode::ServerError(p_err.0.into());
+        Error{code: code, message: p_err.1, data: None}
     }
 }
 
@@ -52,6 +53,8 @@ pub trait Rpc {
     fn get_board_definition(&self) -> RpcResult<Board>;
     #[rpc(name = "set_electrode_pins")]
     fn set_electrode_pins(&self, pins: Vec<u32>) -> RpcResult<()>;
+    #[rpc(name = "move_drop")]
+    fn move_drop(&self, size: [i32; 2], start: [i32; 2], direction: String) -> RpcResult<MoveDropResult>;
 }
 
 impl Rpc for PurpleDropRpc {
@@ -74,5 +77,26 @@ impl Rpc for PurpleDropRpc {
         let mut eventbroker = self.eventbroker.lock().unwrap();
         eventbroker.send(event);
         Ok(())
+    }
+
+    fn move_drop(&self, start: [i32; 2], size: [i32; 2], direction: String) -> RpcResult<MoveDropResult> {
+        warn!("Move drop: {:?} {:?} {:?}", size, start, direction);
+
+        let start = Location{x: start[0], y: start[1]};
+        let size = Location{x: size[0], y: size[1]};
+        let direction = match Direction::from_str(&direction) {
+            Ok(dir) => dir,
+            Err(_) => return Err(RpcError(-1, format!("Invalid direction argument: {:?}", direction))),
+        };
+
+        let arc = self.purpledrop.clone();
+        let mut pd = arc.lock().unwrap();
+
+        let result = match futures::executor::block_on(pd.move_drop(start, size, direction)) {
+            Ok(r) => r,
+            Err(e) => return Err(RpcError(-2, format!("Error executing move drop: {:?}", e))),
+        };
+
+        Ok(result)
     }
 }

@@ -1,10 +1,32 @@
+use serde::Serialize;
+use tokio::time::timeout;
+
+use std::default::Default;
+use std::time::{Duration, Instant};
+
 use crate::error::Result;
 use crate::eventbroker::EventBroker;
-use crate::location::{Location, Rectangle};
+use crate::location::{Location, Rectangle, Direction};
 use crate::{board::Board, devices};
 use crate::settings::Settings;
+use crate::devices::driver::CapacitanceEvent;
 
 use log::*;
+
+#[derive(Clone, Debug, Default, Serialize)]
+pub struct MoveDropResult {
+    success: bool,
+    closed_loop: bool,
+    closed_loop_result: Option<MoveDropClosedLoopResult>,
+}
+
+#[derive(Clone, Debug, Default, Serialize)]
+pub struct MoveDropClosedLoopResult {
+    pre_capacitance: f32,
+    post_capacitance: f32,
+    time_series: Vec<f32>,
+    capacitance_series: Vec<f32>,
+}
 
 #[cfg(not(target_arch = "arm"))]
 pub struct PurpleDrop {
@@ -209,6 +231,116 @@ impl PurpleDrop {
     pub fn output_rects(&mut self, rects: &[Rectangle]) {
         let locs: Vec<_> = rects.iter().flat_map(|r| r.clone().locations()).collect();
         self.output_locations(&locs)
+    }
+
+    pub async fn move_drop(&mut self, start: Location, size: Location, dir: Direction) -> Result<MoveDropResult> {
+
+        async fn wait_for_ack(rx: &mut devices::driver::CapacitanceReceiver) -> Result<()> {
+            loop {
+                match rx.recv().await.unwrap() {
+                    CapacitanceEvent::Ack => return Ok(()),
+                    _ => (),
+                }
+            }
+        }
+        async fn wait_for_measurement(rx: &mut devices::driver::CapacitanceReceiver) -> f32 {
+            loop {
+                match rx.recv().await.unwrap() {
+                    CapacitanceEvent::Measurement(x) => return x,
+                    _ => (),
+                }
+            }
+        }
+        async fn wait_for_capacitance(rx: &mut devices::driver::CapacitanceReceiver, wait_time: Duration, threshold: f32, trailing_samples: usize) -> (Vec<f32>, Vec<f32>) {
+            let start = Instant::now();
+            let mut t = 0.0;
+            let mut timeseries = Vec::new();
+            let mut capseries = Vec::new();
+            let mut trailing_count:usize  = 0;
+            loop {
+                let runtime = start.elapsed();
+                if runtime > wait_time {
+                    break;
+                }
+                match timeout(Duration::from_millis(100), rx.recv()).await.unwrap().unwrap() {
+                    CapacitanceEvent::Measurement(x) => {
+                        // For now, just assume the samplers are periodic at 2ms and create a time vector
+                        // This conveys little information, but it's a stand-in for a potential different
+                        // strategy in the future
+                        timeseries.push(t);
+                        t += 2e-3;
+                        capseries.push(x);
+                        if x > threshold {
+                            if trailing_count >= trailing_samples {
+                                break;
+                            }
+                            trailing_count += 1;
+                        }
+                    },
+                    _ => (),
+                }
+            }
+
+            (timeseries, capseries)
+        }
+
+
+
+        #[cfg(target_arch = "arm")]
+        {
+            if self.driver.has_capacitance_feedback() {
+                // Perform closed loop move
+                let mut events = self.driver.capacitance_channel().unwrap();
+
+                let initial_rect = Rectangle{location: start, dimensions: size};
+                let final_rect = Rectangle{location: start.move_one(dir), dimensions: size};
+
+                // Enable electrodes for start position
+                self.output_rects(&[initial_rect]);
+
+                // Wait for ack
+                match timeout(Duration::from_millis(200), wait_for_ack(&mut events)).await {
+                    Ok(_) => info!("GOT ACK"),
+                    Err(e) => info!("ERR WAITING ON ACK: {:?}", e),
+                };
+
+                // Wait for one active measurement
+                let pre_capacitance = timeout(Duration::from_millis(200), wait_for_measurement(&mut events)).await?;
+
+                self.output_rects(&[final_rect]);
+                // Wait for ack
+                match timeout(Duration::from_millis(200), wait_for_ack(&mut events)).await {
+                    Ok(_) => info!("GOT ACK 2"),
+                    Err(e) => info!("ERR WAITING ON ACK: {:?}", e),
+                };
+
+                let (time_series, capacitance_series) = wait_for_capacitance(&mut events, Duration::from_millis(3000), 0.8 * pre_capacitance, 500).await;
+
+                let mut post_capacitance: f32 = 0.0;
+                if capacitance_series.len() > 0 {
+                    post_capacitance = capacitance_series[capacitance_series.len() - 1];
+                }
+
+                let success = post_capacitance >= 0.8 * pre_capacitance;
+
+                Ok(MoveDropResult{
+                    success,
+                    closed_loop: true,
+                    closed_loop_result: Some(MoveDropClosedLoopResult{pre_capacitance, post_capacitance, time_series, capacitance_series}),
+                })
+
+            } else {
+                // TODO: Perform open loop move
+                Ok(MoveDropResult{
+                    success: false,
+                    closed_loop: false,
+                    closed_loop_result: None,
+                })
+            }
+        }
+
+        #[cfg(not(target_arch = "arm"))]
+        Ok(MoveDropResult::default())
     }
 
     // pub fn input(&mut self, _input_port: &Peripheral, _volume: f64) -> Result<()> {

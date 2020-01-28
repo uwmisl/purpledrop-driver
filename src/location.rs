@@ -2,7 +2,10 @@ use std::fmt;
 use std::num::ParseIntError;
 use std::str::FromStr;
 
+use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
+
+use crate::error::Result;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)] // std
 #[derive(Serialize, Deserialize)] // serde
@@ -36,6 +39,31 @@ pub const fn yx(y: i32, x: i32) -> Location {
     Location { y, x }
 }
 
+pub enum Direction {
+    North,
+    South,
+    East,
+    West,
+}
+
+impl Direction {
+    pub fn from_str(s: &str) -> Result<Direction> {
+        use Direction::*;
+        let uppercase = s.to_uppercase();
+        match &uppercase[..] {
+            "NORTH" => Ok(North),
+            "UP" => Ok(North),
+            "SOUTH" => Ok(South),
+            "DOWN" => Ok(South),
+            "EAST" => Ok(East),
+            "RIGHT" => Ok(East),
+            "WEST" => Ok(West),
+            "LEFT" => Ok(West),
+            _ => Err(anyhow!("Failed to parse direction string '{}'", s)),
+        }
+    }
+}
+
 impl Location {
     pub fn distance_to(self, other: Self) -> u32 {
         (self - other).norm()
@@ -60,6 +88,16 @@ impl Location {
     pub fn east(self) -> Location {
         self + yx(0, 1)
     }
+
+    pub fn move_one(self, dir: Direction) -> Self {
+        use Direction::*;
+        match dir {
+            North => self.north(),
+            South => self.south(),
+            East => self.east(),
+            West => self.west(),
+        }
+    }
 }
 
 impl fmt::Debug for Location {
@@ -71,7 +109,7 @@ impl fmt::Debug for Location {
 impl FromStr for Location {
     type Err = ParseIntError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         let coords: Vec<&str> = s
             .trim()
             .trim_matches(|p| p == '(' || p == ')')

@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 
 use log::*;
 use serde::Deserialize;
-use crate::devices::driver::Driver;
+use crate::devices::driver::{CapacitanceReceiver, Driver};
 
 #[cfg(target_arch = "arm")]
 use rppal::{
@@ -177,6 +177,14 @@ impl Driver for Hv507 {
         self.latch_enable.set_high();
         spin(spin_duration);
         self.latch_enable.set_low();
+    }
+
+    fn has_capacitance_feedback(&self) -> bool {
+        false
+    }
+
+    fn capacitance_channel(&self) -> Option<CapacitanceReceiver> {
+        None
     }
 }
 
