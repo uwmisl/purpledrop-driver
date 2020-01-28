@@ -12,15 +12,14 @@ description = "Software for the purpledrop DMF device"
 structopt = "0.3.5"
 log = "0.4.6"
 env_logger = "0.7"
-futures = "0.1"
-hyper-staticfile = "0.3.0"
+futures = "0.3"
+hyper-staticfile = "0.5.0"
 signal-hook = "0.1.9"
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.8.9"
 toml = "0.5"
 jsonrpc-core = "14"
 jsonrpc-derive = "14"
-jsonrpc-http-server = "14"
 prost = "0.6"
 bytes = "0.5"
 ws = "*"
@@ -28,13 +27,15 @@ reqwest = { version = "0.10", features = ["blocking", "json"] }
 anyhow = "1.0"
 serialport = { version = "3.3", default-features = false }
 pd-driver-messages = {version = "0.1.0", git = "https://github.com/mcbridejc/pd-driver-messages"}
+tokio = { version = "0.2", features = ["time", "sync", "rt-core", "rt-util"] }
+hyper = "0.13"
 
 [target.'cfg(target_arch = "arm")'.dependencies]
 rppal = "0.11"
 
 [build-dependencies]
 chrono = "0.4"
-prost-build = "0.5"
+prost-build = "0.6"
 
 [profile.release]
 debug = true

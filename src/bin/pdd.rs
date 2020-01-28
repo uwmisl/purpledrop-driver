@@ -20,7 +20,8 @@ pub struct Opts {
     video_host: Option<std::net::SocketAddr>,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     debug!("");
     let _ = env_logger::try_init();
 
@@ -49,5 +50,5 @@ fn main() {
         settings.daemon.video_host = opts.video_host;
     }
 
-    httpserver::run(settings).unwrap();
+    httpserver::run(settings).await.unwrap();
 }
