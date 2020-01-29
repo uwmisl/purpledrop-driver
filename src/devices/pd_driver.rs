@@ -12,7 +12,6 @@ use pd_driver_messages::{
     messages::{
         Message,
         ElectrodeEnableStruct,
-        ActiveCapacitanceStruct,
     },
 };
 
@@ -96,35 +95,44 @@ fn receive_thread(mut broker: EventBroker, event_tx: Arc<Mutex<broadcast::Sender
         }
         for i in 0..readlen {
             match parser.parse(buf[i]) {
-                Some(msg) => {
-                    match msg {
-                        Message::ActiveCapacitanceMsg(msg) => {
-                            let sender = event_tx.lock().unwrap();
-                            sender.send(CapacitanceEvent::Measurement((msg.measurement - msg.baseline) as f32)).unwrap();
-
-                            // let pbmsg = protobuf::ActiveCapacitance{
-                            //     timestamp: Some(timestamp_now()),
-                            //     measurement: Some(protobuf::CapacitanceMeasurement{
-                            //         capacitance: (msg.measurement - msg.baseline) as f32,
-                            //         drop_present: false,
-                            //     }),
-                            // };
-                            //let event = protobuf::PurpleDropEvent{msg: Some(protobuf::purple_drop_event::Msg::ActiveCapacitance(pbmsg))};
-                            //broker.send(event);
-                            //info!("Active Capacitance: {}, {}", msg.baseline, msg.measurement);
+                Ok(result) => {
+                    match result {
+                        Some(msg) => {
+                            match msg {
+                                Message::ActiveCapacitanceMsg(msg) => {
+                                    let sender = event_tx.lock().unwrap();
+                                    // TODO: Need some calibration procedure to come up with this
+                                    const CAP_OFFSET:f32 = -120.0;
+                                    // Send will fail with a SendError if there are no receivers, and this is OK
+                                    sender.send(CapacitanceEvent::Measurement((msg.measurement - msg.baseline) as f32 + CAP_OFFSET)).ok();
+                                    
+                                    // let pbmsg = protobuf::ActiveCapacitance{
+                                    //     timestamp: Some(timestamp_now()),
+                                    //     measurement: Some(protobuf::CapacitanceMeasurement{
+                                    //         capacitance: (msg.measurement - msg.baseline) as f32,
+                                    //         drop_present: false,
+                                    //     }),
+                                    // };
+                                    //let event = protobuf::PurpleDropEvent{msg: Some(protobuf::purple_drop_event::Msg::ActiveCapacitance(pbmsg))};
+                                    //broker.send(event);
+                                    //info!("Active Capacitance: {}, {}", msg.baseline, msg.measurement);
+                                },
+                                Message::BulkCapacitanceMsg(msg) => {
+                                    bulk_collector.add_measurements(msg.start_index as usize, msg.values, &mut broker);
+                                    info!("Bulk Capacitance!");
+                                },
+                                Message::ElectrodeAckMsg(_) => {
+                                    let sender = event_tx.lock().unwrap();
+                                    warn!("Sending ElectrodeAck notice");
+                                    sender.send(CapacitanceEvent::Ack).ok();
+                                }
+                                _ => (),
+                            }
                         },
-                        Message::BulkCapacitanceMsg(msg) => {
-                            bulk_collector.add_measurements(msg.start_index as usize, msg.values, &mut broker);
-                            info!("Bulk Capacitance!");
-                        },
-                        Message::ElectrodeAckMsg(_) => {
-                            let sender = event_tx.lock().unwrap();
-                            sender.send(CapacitanceEvent::Ack).unwrap();
-                        }
-                        _ => (),
+                        None => (),
                     }
                 },
-                None => (),
+                Err(e) => warn!("Error parsing PdDriver message: {}", e),
             }
         }
     }
@@ -145,9 +153,11 @@ impl PdDriver {
         let cloned_broker = self.event_broker.clone();
         let cloned_event_tx = self.event_tx.clone();
         let cloned_port: Box<dyn SerialPort> = self.port.try_clone().unwrap();
-        thread::spawn(move || {
+        thread::Builder::new()
+        .name("PdDriverRx".to_string())
+        .spawn(move || {
             receive_thread(cloned_broker, cloned_event_tx, cloned_port);
-        });
+        }).unwrap();
     }
 }
 

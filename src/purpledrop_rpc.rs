@@ -72,10 +72,7 @@ impl Rpc for PurpleDropRpc {
         let arc = self.purpledrop.clone();
         let mut pd = arc.lock().unwrap();
         pd.output_pins(&pin_array);
-        let msg = ElectrodeState{timestamp: Some(Timestamp{seconds: 0, nanos: 0}), electrodes: pin_array};
-        let event = PurpleDropEvent{msg: Some(Msg::ElectrodeState(msg))};
-        let mut eventbroker = self.eventbroker.lock().unwrap();
-        eventbroker.send(event);
+        
         Ok(())
     }
 

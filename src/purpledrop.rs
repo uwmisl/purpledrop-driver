@@ -1,15 +1,21 @@
+use anyhow::Context;
 use serde::Serialize;
 use tokio::time::timeout;
 
 use std::default::Default;
+use std::sync::{Mutex};
 use std::time::{Duration, Instant};
 
 use crate::error::Result;
-use crate::eventbroker::EventBroker;
+use crate::eventbroker::{EventBroker, timestamp_now};
 use crate::location::{Location, Rectangle, Direction};
 use crate::{board::Board, devices};
 use crate::settings::Settings;
 use crate::devices::driver::CapacitanceEvent;
+use crate::protobuf:: {
+    {PurpleDropEvent, ElectrodeState},
+    purple_drop_event::Msg,
+};
 
 use log::*;
 
@@ -36,6 +42,7 @@ pub struct PurpleDrop {
 #[cfg(target_arch = "arm")]
 pub struct PurpleDrop {
     pub board: Board,
+    pub event_broker: Mutex<EventBroker>,
     pub driver: Box<dyn devices::driver::Driver>,
     pub mcp4725: Option<devices::mcp4725::Mcp4725>,
     pub pca9685: Option<devices::pca9685::Pca9685>,
@@ -53,7 +60,7 @@ impl PurpleDrop {
         if settings.pd_driver.is_some() {
             let pd_driver_settings = settings.pd_driver.unwrap();
             info!("Using pd-driver on port {}", pd_driver_settings.port);
-            driver = Box::new(pd_driver_settings.make(event_broker)?);
+            driver = Box::new(pd_driver_settings.make(event_broker.clone())?);
         } else if cfg!(target_arch = "arm") && settings.hv507.is_some() {
             info!("Using HV507 driver");
             driver = Box::new(settings.hv507.unwrap().make()?);
@@ -64,6 +71,7 @@ impl PurpleDrop {
 
         let pd = PurpleDrop {
             board: settings.board.clone(),
+            event_broker: Mutex::new(event_broker.clone()),
             #[cfg(target_arch = "arm")]
             driver: driver,
             #[cfg(target_arch = "arm")]
@@ -210,6 +218,11 @@ impl PurpleDrop {
 
             self.driver.shift_and_latch();
         }
+
+        let msg = ElectrodeState{timestamp: Some(timestamp_now()), electrodes: pins.to_vec()};
+        let event = PurpleDropEvent{msg: Some(Msg::ElectrodeState(msg))};
+        let mut event_broker = self.event_broker.lock().unwrap();
+        event_broker.send(event);
     }
 
     pub fn output_locations(&mut self, locations: &[Location]) {
@@ -237,17 +250,17 @@ impl PurpleDrop {
 
         async fn wait_for_ack(rx: &mut devices::driver::CapacitanceReceiver) -> Result<()> {
             loop {
-                match rx.recv().await.unwrap() {
+                match rx.recv().await? {
                     CapacitanceEvent::Ack => return Ok(()),
-                    _ => (),
+                    _ => warn!("Got unexpected event"),
                 }
             }
         }
-        async fn wait_for_measurement(rx: &mut devices::driver::CapacitanceReceiver) -> f32 {
+        async fn wait_for_measurement(rx: &mut devices::driver::CapacitanceReceiver) -> Result<f32> {
             loop {
-                match rx.recv().await.unwrap() {
-                    CapacitanceEvent::Measurement(x) => return x,
-                    _ => (),
+                match rx.recv().await? {
+                    CapacitanceEvent::Measurement(x) => return Ok(x),
+                    _ => warn!("Got unexpected event"),
                 }
             }
         }
@@ -305,7 +318,7 @@ impl PurpleDrop {
                 };
 
                 // Wait for one active measurement
-                let pre_capacitance = timeout(Duration::from_millis(200), wait_for_measurement(&mut events)).await?;
+                let pre_capacitance = timeout(Duration::from_millis(200), wait_for_measurement(&mut events)).await.context("Failed waiting for initial capacitance measurement")??;
 
                 self.output_rects(&[final_rect]);
                 // Wait for ack
@@ -314,14 +327,15 @@ impl PurpleDrop {
                     Err(e) => info!("ERR WAITING ON ACK: {:?}", e),
                 };
 
-                let (time_series, capacitance_series) = wait_for_capacitance(&mut events, Duration::from_millis(3000), 0.8 * pre_capacitance, 500).await;
+                let (time_series, capacitance_series) = wait_for_capacitance(&mut events, Duration::from_millis(3000), 0.8 * pre_capacitance, 500)
+                    .await;
 
                 let mut post_capacitance: f32 = 0.0;
                 if capacitance_series.len() > 0 {
                     post_capacitance = capacitance_series[capacitance_series.len() - 1];
                 }
 
-                let success = post_capacitance >= 0.8 * pre_capacitance;
+                let success = post_capacitance > 0.8 * pre_capacitance;
 
                 Ok(MoveDropResult{
                     success,
