@@ -9,10 +9,6 @@ use crate::settings::Settings;
 use crate::eventbroker::EventBroker;
 use crate::board::Board;
 use crate::error::Result;
-use crate::protobuf:: {
-    {PurpleDropEvent, ElectrodeState, Timestamp},
-    purple_drop_event::Msg,
-};
 use crate::location::{Direction, Location};
 
 pub struct RpcError(i32, String);
@@ -51,6 +47,8 @@ impl PurpleDropRpc {
 pub trait Rpc {
     #[rpc(name = "get_board_definition")]
     fn get_board_definition(&self) -> RpcResult<Board>;
+    #[rpc(name = "get_bulk_capacitance")]
+    fn get_bulk_capacitance(&self) -> RpcResult<Vec<f32>>;
     #[rpc(name = "set_electrode_pins")]
     fn set_electrode_pins(&self, pins: Vec<u32>) -> RpcResult<()>;
     #[rpc(name = "move_drop")]
@@ -64,6 +62,15 @@ impl Rpc for PurpleDropRpc {
         Ok(pd.board.clone())
     }
 
+    fn get_bulk_capacitance(&self) -> RpcResult<Vec<f32>> {
+        let arc = self.purpledrop.clone();
+        let pd = arc.lock().unwrap();
+
+        match pd.bulk_capacitance() {
+            Ok(result) => Ok(result),
+            Err(e) => Err(RpcError(-3, format!("{:?}", e))),
+        }
+    }
     fn set_electrode_pins(&self, pins: Vec<u32>) -> RpcResult<()> {
         let mut pin_array = vec![false; PurpleDrop::n_pins()];
         for pin in pins {

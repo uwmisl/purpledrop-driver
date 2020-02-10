@@ -22,7 +22,8 @@ use crate::protobuf;
 
 // Number of electrodes controlled by the driver
 const N_PINS: usize = 128;
-
+// TODO: Need some calibration procedure to come up with this
+const CAP_OFFSET:f32 = -120.0;
 #[derive(Clone, Debug, Deserialize)]
 pub struct Settings {
     pub port: String,
@@ -48,6 +49,7 @@ pub struct PdDriver {
     event_broker: EventBroker,
     event_tx: Arc<Mutex<broadcast::Sender<CapacitanceEvent>>>,
     pins: [bool; N_PINS],
+    bulk_capacitance: Arc<Mutex<[f32; N_PINS]>>,
 }
 
 struct BulkMeasurementCollector {
@@ -55,32 +57,34 @@ struct BulkMeasurementCollector {
 }
 
 impl BulkMeasurementCollector {
-    pub fn add_measurements(&mut self, start_index: usize, values: Vec<u16>, event_broker: &mut EventBroker) {
+    pub fn add_measurements<T>(&mut self, start_index: usize, values: Vec<u16>, mut callback: T)
+    where
+        T: FnMut(Vec<f32>)
+    {
         for (i, v) in values.iter().enumerate() {
             self.values[i + start_index] = *v;
         }
 
         // When setting the last message, fire off the event
         if start_index + values.len() == N_PINS {
-            let measurements: Vec<protobuf::CapacitanceMeasurement> = self.values.iter().map( |v| {
-                protobuf::CapacitanceMeasurement{capacitance: *v as f32, drop_present: false}
-            }).collect();
-            let msg = protobuf::BulkCapacitance{
-                timestamp: Some(timestamp_now()),
-                measurements: measurements
-            };
-            let event = protobuf::PurpleDropEvent{msg: Some(protobuf::purple_drop_event::Msg::BulkCapacitance(msg))};
-            event_broker.send(event);
+            let capacitance = self.values.iter().map(|x| (*x as f32 + CAP_OFFSET) as f32).collect();
+            callback(capacitance);
         }
     }
 }
 
-fn receive_thread(mut broker: EventBroker, event_tx: Arc<Mutex<broadcast::Sender<CapacitanceEvent>>>, mut port: Box<dyn SerialPort>) {
+fn receive_thread(
+    mut broker: EventBroker,
+    bulk_capacitance: Arc<Mutex<[f32; N_PINS]>>,
+    event_tx: Arc<Mutex<broadcast::Sender<CapacitanceEvent>>>,
+    mut port: Box<dyn SerialPort>,
+)
+{
     let mut parser: Parser = Parser::new();
     let mut bulk_collector = BulkMeasurementCollector{values: [0; N_PINS]};
     info!("Running pd-driver receive thread");
     loop {
-        let mut buf = [0u8; 16];
+        let mut buf = [0u8; 128];
         let result = port.read(&mut buf);
         if let Err(e) = result {
             match e.kind() {
@@ -101,11 +105,10 @@ fn receive_thread(mut broker: EventBroker, event_tx: Arc<Mutex<broadcast::Sender
                             match msg {
                                 Message::ActiveCapacitanceMsg(msg) => {
                                     let sender = event_tx.lock().unwrap();
-                                    // TODO: Need some calibration procedure to come up with this
-                                    const CAP_OFFSET:f32 = -120.0;
+
                                     // Send will fail with a SendError if there are no receivers, and this is OK
                                     sender.send(CapacitanceEvent::Measurement((msg.measurement - msg.baseline) as f32 + CAP_OFFSET)).ok();
-                                    
+
                                     // let pbmsg = protobuf::ActiveCapacitance{
                                     //     timestamp: Some(timestamp_now()),
                                     //     measurement: Some(protobuf::CapacitanceMeasurement{
@@ -118,7 +121,24 @@ fn receive_thread(mut broker: EventBroker, event_tx: Arc<Mutex<broadcast::Sender
                                     //info!("Active Capacitance: {}, {}", msg.baseline, msg.measurement);
                                 },
                                 Message::BulkCapacitanceMsg(msg) => {
-                                    bulk_collector.add_measurements(msg.start_index as usize, msg.values, &mut broker);
+                                    bulk_collector.add_measurements(msg.start_index as usize, msg.values, |values| {
+                                        // Send event to broker
+                                        let measurements: Vec<protobuf::CapacitanceMeasurement> = values.iter().map( |v| {
+                                            protobuf::CapacitanceMeasurement{capacitance: *v as f32, drop_present: false}
+                                        }).collect();
+                                        let msg = protobuf::BulkCapacitance{
+                                            timestamp: Some(timestamp_now()),
+                                            measurements: measurements
+                                        };
+                                        let event = protobuf::PurpleDropEvent{msg: Some(protobuf::purple_drop_event::Msg::BulkCapacitance(msg))};
+                                        broker.send(event);
+
+                                        // Store latest sample
+                                        let mut output = bulk_capacitance.lock().unwrap();
+                                        for i in 0..N_PINS {
+                                            output[i] = values[i];
+                                        }
+                                    });
                                     info!("Bulk Capacitance!");
                                 },
                                 Message::ElectrodeAckMsg(_) => {
@@ -143,7 +163,8 @@ impl PdDriver {
         let pins = [false; N_PINS];
         let (event_tx, _) = broadcast::channel(256);
         let event_tx = Arc::new(Mutex::new(event_tx));
-        let obj = PdDriver { port, event_broker, event_tx, pins };
+        let bulk_capacitance = Arc::new(Mutex::new([0.0; N_PINS]));
+        let obj = PdDriver { port, event_broker, event_tx, pins, bulk_capacitance };
         obj.init();
         obj
     }
@@ -152,11 +173,12 @@ impl PdDriver {
         // Start a serial port read thread
         let cloned_broker = self.event_broker.clone();
         let cloned_event_tx = self.event_tx.clone();
+        let cloned_bulk_capacitance = self.bulk_capacitance.clone();
         let cloned_port: Box<dyn SerialPort> = self.port.try_clone().unwrap();
         thread::Builder::new()
         .name("PdDriverRx".to_string())
         .spawn(move || {
-            receive_thread(cloned_broker, cloned_event_tx, cloned_port);
+            receive_thread(cloned_broker, cloned_bulk_capacitance, cloned_event_tx, cloned_port);
         }).unwrap();
     }
 }
@@ -210,6 +232,11 @@ impl Driver for PdDriver {
     fn capacitance_channel(&self) -> Option<CapacitanceReceiver> {
         let tx = self.event_tx.lock().unwrap();
         Some(tx.subscribe())
+    }
+
+    fn bulk_capacitance(&self) -> Vec<f32> {
+        let data = self.bulk_capacitance.lock().unwrap();
+        (*data).to_vec()
     }
 }
 

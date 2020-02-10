@@ -186,6 +186,10 @@ impl Driver for Hv507 {
     fn capacitance_channel(&self) -> Option<CapacitanceReceiver> {
         None
     }
+
+    fn bulk_capacitance(&self) -> Vec<f32> {
+        panic!("Not implemented");
+    }
 }
 
 fn spin(duration: Duration) {

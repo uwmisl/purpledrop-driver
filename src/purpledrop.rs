@@ -1,4 +1,4 @@
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use serde::Serialize;
 use tokio::time::timeout;
 
@@ -100,6 +100,14 @@ impl PurpleDrop {
         #[cfg(target_arch = "arm")]
         self.driver.set_frequency(f)?;
         Ok(())
+    }
+
+    pub fn bulk_capacitance(&self) -> Result<Vec<f32>> {
+        if self.driver.has_capacitance_feedback() {
+            Ok(self.driver.bulk_capacitance())
+        } else {
+            Err(anyhow!("No capacitance measurement available"))
+        }
     }
 
     // pub fn heat(

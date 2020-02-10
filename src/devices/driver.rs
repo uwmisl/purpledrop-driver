@@ -26,5 +26,7 @@ pub trait Driver: Send {
     fn has_capacitance_feedback(&self) -> bool;
 
     fn capacitance_channel(&self) -> Option<CapacitanceReceiver>;
+
+    fn bulk_capacitance(&self) -> Vec<f32>;
 }
 
