@@ -793,7 +793,7 @@ dependencies = [
 [[package]]
 name = "pd-driver-messages"
 version = "0.1.0"
-source = "git+https://github.com/mcbridejc/pd-driver-messages#e8615e31c7ef48a6430660d56e9478de79426f5d"
+source = "git+https://github.com/mcbridejc/pd-driver-messages#5369585bc1bc547c8ef0f7382fe4da7c8e791b5b"
 dependencies = [
  "generic-array 0.13.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
