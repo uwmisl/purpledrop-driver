@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Context};
 use serde::Serialize;
 use tokio::time::timeout;
+use tokio::time::delay_for;
 
 use std::default::Default;
 use std::sync::{Mutex};
@@ -309,12 +310,13 @@ impl PurpleDrop {
 
         #[cfg(target_arch = "arm")]
         {
+            let initial_rect = Rectangle{location: start, dimensions: size};
+            let final_rect = Rectangle{location: start.move_one(dir), dimensions: size};
+
             if self.driver.has_capacitance_feedback() {
                 // Perform closed loop move
                 let mut events = self.driver.capacitance_channel().unwrap();
 
-                let initial_rect = Rectangle{location: start, dimensions: size};
-                let final_rect = Rectangle{location: start.move_one(dir), dimensions: size};
 
                 // Enable electrodes for start position
                 self.output_rects(&[initial_rect]);
@@ -352,9 +354,15 @@ impl PurpleDrop {
                 })
 
             } else {
-                // TODO: Perform open loop move
+                // TODO: This should be adjustable (need config api)
+                const MOVE_TIME: f32 = 1.0;
+
+                self.output_rects(&[final_rect]);
+
+                delay_for(Duration::from_secs_f32(MOVE_TIME)).await;
+
                 Ok(MoveDropResult{
-                    success: false,
+                    success: true,
                     closed_loop: false,
                     closed_loop_result: None,
                 })
