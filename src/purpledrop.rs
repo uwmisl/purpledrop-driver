@@ -38,6 +38,7 @@ pub struct MoveDropClosedLoopResult {
 #[cfg(not(target_arch = "arm"))]
 pub struct PurpleDrop {
     pub board: Board,
+    pub event_broker: Mutex<EventBroker>,
 }
 
 #[cfg(target_arch = "arm")]
@@ -104,11 +105,13 @@ impl PurpleDrop {
     }
 
     pub fn bulk_capacitance(&self) -> Result<Vec<f32>> {
+        #[cfg(target_arch = "arm")]
+        {
         if self.driver.has_capacitance_feedback() {
             Ok(self.driver.bulk_capacitance())
-        } else {
-            Err(anyhow!("No capacitance measurement available"))
         }
+        }
+        Err(anyhow!("No capacitance measurement available"))
     }
 
     // pub fn heat(

@@ -89,6 +89,6 @@ mod tests {
     fn test_default_config() {
         let cfg = Settings::from_file("config/default.toml").unwrap();
         assert_eq!(cfg.daemon.static_dir, PD_STATIC_DIR_DEFAULT_PATH);
-        assert_eq!(cfg.hv507.frequency, 500.0);
+        assert_eq!(cfg.hv507.unwrap().frequency, 500.0);
     }
 }

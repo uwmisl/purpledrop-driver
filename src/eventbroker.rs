@@ -62,7 +62,7 @@ mod tests {
         let mut broker = EventBroker::new();
 
         // Setup handler to push messages into a channel for the test
-        let (cin, cout) = channel::<EventMessage>();
+        let (cin, cout) = std::sync::mpsc::channel::<EventMessage>();
         broker.add_handler(move |msg| {
             cin.send(msg).unwrap();
         });
