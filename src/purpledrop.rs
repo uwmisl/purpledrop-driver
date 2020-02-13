@@ -460,7 +460,11 @@ impl PurpleDrop {
     }
 
     pub fn temperatures(&mut self) -> Result<Vec<f32>> {
-        Ok(vec![])
+        #[cfg(target_arch="arm")]
+        return Ok(self.max31865.get_temperatures().expect("Failed to unwrap max31865 temps"));
+
+        #[cfg(not(target_arch="arm"))]
+        return Ok(vec![]);
     }
 
 
