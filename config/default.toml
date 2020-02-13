@@ -37,7 +37,7 @@ polarity_pwm_channel = 0
 # PWM controller
 # [pca9685]
 # bus = 1
-# address = 0x42
+address = 0x40
 
 # temperature sensor
 # [max31865]
