@@ -17,7 +17,6 @@ use std::thread;
 use std::time::Duration;
 
 struct State {
-    connected: bool,
     last_frame: i32,
 }
 
@@ -108,7 +107,7 @@ impl VideoClient {
         VideoClient{
             eventbroker: Arc::new(Mutex::new(eventbroker.clone())),
             host,
-            state: Arc::new(Mutex::new(State{connected: false, last_frame: 0}))}
+            state: Arc::new(Mutex::new(State{last_frame: 0}))}
     }
 
     pub fn start(&self) {
