@@ -35,14 +35,25 @@ polarity_pwm_channel = 0
 # address = 0x60
 
 # PWM controller
-# [pca9685]
-# bus = 1
+[pca9685]
+bus = 1
 address = 0x40
+frequency = 1000
 
-# temperature sensor
-# [max31865]
-# bus = 0
-# select = 0
-# n_samples = 10
-# resist_ref = 4000.0
-# resist_zero = 1000.0
+# temperature sensors
+# There's a third max31865
+[[max31865]]
+bus = 0
+select = 0
+n_samples = 10
+resist_ref = 4000.0
+resist_zero = 1000.0
+read_frequency = 2.0
+
+[[max31865]]
+bus = 0
+select = 1
+n_samples = 10
+resist_ref = 4000.0
+resist_zero = 1000.0
+read_frequency = 2.0

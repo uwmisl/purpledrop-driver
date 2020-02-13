@@ -70,6 +70,7 @@ pub struct Settings {
     pub n_samples: u32,
     pub resist_ref: f32,
     pub resist_zero: f32,
+    pub read_frequency: f32,
 }
 
 #[cfg(target_arch = "arm")]
@@ -96,13 +97,14 @@ impl Settings {
             _ => panic!("Bad select: {}", self.select),
         };
 
-        let spi = Spi::new(bus, select, CLOCK_SPEED, Mode::Mode1)?;
+        let spi = Spi::new(bus, select, CLOCK_SPEED, Mode::Mode1).unwrap();
 
         let mut max = Max31865 {
             spi,
             n_samples: self.n_samples,
             resist_ref: self.resist_ref,
             resist_zero: self.resist_zero,
+            read_frequency: self.read_frequency,
         };
 
         max.initalize()?;
@@ -117,6 +119,7 @@ pub struct Max31865 {
     n_samples: u32,
     resist_ref: f32,
     resist_zero: f32,
+    pub read_frequency: f32,
 }
 
 #[cfg(target_arch = "arm")]
@@ -124,7 +127,8 @@ impl Max31865 {
     fn initalize(&mut self) -> Result<()> {
         // first write out the config bits
         self.spi
-            .write(&[Register::Configuration.write(), DEFAULT_CONFIG])?;
+            .write(&[Register::Configuration.write(), DEFAULT_CONFIG])
+            .expect("Writing spi config");
 
         // now write out the thresholds, knowing that it will auto-increment
         // starting from the HighFaultThresholdMsb register
@@ -137,7 +141,7 @@ impl Max31865 {
             ht_lsbs,
             lt_msbs,
             lt_lsbs,
-        ])?;
+        ]).expect("Writing high fault thresh");
         Ok(())
     }
 

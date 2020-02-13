@@ -53,7 +53,7 @@ pub struct Settings {
     pub hv507: Option<devices::hv507::Settings>,
     pub mcp4725: Option<devices::mcp4725::Settings>,
     pub pca9685: Option<devices::pca9685::Settings>,
-    pub max31865: Option<devices::max31865::Settings>,
+    pub max31865: Option<Vec<devices::max31865::Settings>>,
 }
 
 impl Settings {

@@ -4,7 +4,7 @@ use tokio::time::timeout;
 use tokio::time::delay_for;
 
 use std::default::Default;
-use std::sync::{Mutex};
+use std::sync::{Arc,Mutex};
 use std::time::{Duration, Instant};
 
 use crate::error::Result;
@@ -35,6 +35,71 @@ pub struct MoveDropClosedLoopResult {
     capacitance_series: Vec<f32>,
 }
 
+#[cfg(target_arch = "arm")]
+pub struct BackgroundTempReader {
+    //sensors: Vec<devices::max31865::Max31865>,
+    latest: Arc<Mutex<Vec<f32>>>,
+}
+
+#[cfg(target_arch = "arm")]
+impl BackgroundTempReader {
+    pub fn new(sensors: Vec<devices::max31865::Max31865>) -> BackgroundTempReader{
+        let latest = Arc::new(Mutex::new(vec![0.0; sensors.len()]));
+        let ret = BackgroundTempReader{latest: latest.clone()};
+        Self::start(sensors, latest.clone());
+        ret
+    }
+    pub fn start(mut sensors: Vec<devices::max31865::Max31865>, latest: Arc<Mutex<Vec<f32>>>) {
+        // tokio::spawn(async move {
+        //     let mut streams = Vec::new();
+        //     for f in frequencies {
+        //         streams.push(tokio::time::interval(Duration::from_secs_f32(1.0 / f)));
+        //     }   
+        //     loop {
+        //         let futures = streams.iter_mut().map(|s| {Box::pin(s.tick())});
+        //         let (_res, idx, _remaining_futures) = future::select_all(futures).await;
+        //         println!("Got sensor {:?}", idx);
+        //     }
+        // });
+        // let mut futures = Vec::new();
+        // for s in self.sensors {
+        //     futures.push(tokio::time::interval(Duration::from_secs_f32(1.0 / s.read_frequency)));
+        // }
+        // // let futures = self.sensors.iter().map(|s| {
+        // //     tokio::time::interval(Duration::from_secs_f32(1. / s.read_frequency))
+        // // }).collect();
+        // Create a list of Interval streams, one per sensor, these will yield () periodically
+        // at the rate of each sensor. 
+        let mut streams = Vec::new();
+        for s in &sensors {
+            streams.push(tokio::time::interval(Duration::from_secs_f32(1.0 / s.read_frequency)));
+        }
+        if streams.len() == 0 {
+            return;
+        }
+        tokio::spawn(async move {
+            loop {
+                // Convert the streams to a list of futures for select_all
+                let futures = streams.iter_mut().map(|s| Box::pin(s.tick()));
+                let (_res, idx, _remaining_futures) = futures::future::select_all(futures).await;
+                warn!("Got sensor {:?}", idx);
+                {
+                    //let arc = latest.clone();
+                    let mut locked = latest.lock().expect("Failed to lock BackgroundTempReader output");
+                    match sensors[idx].read_temperature() {
+                        Ok(temp) => locked[idx] = temp,
+                        Err(e) => error!("Error reading from MAX31865: {:?}", e),
+                    };
+                }
+            }
+        });
+    }
+    pub fn get_temperatures(&mut self) -> Result<Vec<f32>> {
+        let latest = self.latest.clone().lock().unwrap().clone();
+        Ok(latest)
+    }
+}
+
 #[cfg(not(target_arch = "arm"))]
 pub struct PurpleDrop {
     pub board: Board,
@@ -48,27 +113,32 @@ pub struct PurpleDrop {
     pub driver: Box<dyn devices::driver::Driver>,
     pub mcp4725: Option<devices::mcp4725::Mcp4725>,
     pub pca9685: Option<devices::pca9685::Pca9685>,
-    pub max31865: Option<devices::max31865::Max31865>,
+    pub max31865: BackgroundTempReader,
 }
-
 
 impl PurpleDrop {
     pub fn new(settings: Settings, event_broker: EventBroker) -> Result<PurpleDrop> {
         trace!("Initializing purpledrop...");
 
         let driver: Box<dyn devices::driver::Driver>;
+        let max31865;
         #[cfg(target_arch="arm")]
         {
-        if settings.pd_driver.is_some() {
-            let pd_driver_settings = settings.pd_driver.unwrap();
-            info!("Using pd-driver on port {}", pd_driver_settings.port);
-            driver = Box::new(pd_driver_settings.make(event_broker.clone())?);
-        } else if cfg!(target_arch = "arm") && settings.hv507.is_some() {
-            info!("Using HV507 driver");
-            driver = Box::new(settings.hv507.unwrap().make()?);
-        } else {
-            panic!("Must provide either an hv507 or pddriver config section");
-        }
+            if settings.pd_driver.is_some() {
+                let pd_driver_settings = settings.pd_driver.unwrap();
+                info!("Using pd-driver on port {}", pd_driver_settings.port);
+                driver = Box::new(pd_driver_settings.make(event_broker.clone())?);
+            } else if cfg!(target_arch = "arm") && settings.hv507.is_some() {
+                info!("Using HV507 driver");
+                driver = Box::new(settings.hv507.unwrap().make()?);
+            } else {
+                panic!("Must provide either an hv507 or pddriver config section");
+            }
+
+            max31865 = match settings.max31865.map(|s| s.iter().map(|t| t.make()).collect()).transpose()? {
+                Some(devices) => BackgroundTempReader::new(devices),
+                None => BackgroundTempReader::new(Vec::new()),
+            };
         }
 
         let pd = PurpleDrop {
@@ -81,8 +151,9 @@ impl PurpleDrop {
             #[cfg(target_arch = "arm")]
             pca9685: settings.pca9685.map(|s| s.make()).transpose()?,
             #[cfg(target_arch = "arm")]
-            max31865: settings.max31865.map(|s| s.make()).transpose()?,
+            max31865: max31865,
         };
+
         trace!("Initialized purpledrop!");
 
         Ok(pd)
@@ -108,7 +179,7 @@ impl PurpleDrop {
         #[cfg(target_arch = "arm")]
         {
         if self.driver.has_capacitance_feedback() {
-            Ok(self.driver.bulk_capacitance())
+            return Ok(self.driver.bulk_capacitance());
         }
         }
         Err(anyhow!("No capacitance measurement available"))
@@ -310,7 +381,6 @@ impl PurpleDrop {
         }
 
 
-
         #[cfg(target_arch = "arm")]
         {
             let initial_rect = Rectangle{location: start, dimensions: size};
@@ -375,6 +445,24 @@ impl PurpleDrop {
         #[cfg(not(target_arch = "arm"))]
         Ok(MoveDropResult::default())
     }
+
+    /// Set pwm output channel on the PCA9685 to a particular duty cycle
+    pub fn set_pwm_duty_cycle(&mut self, chan: u8, duty_cycle: f32) -> Result<()> {
+        #[cfg(target_arch="arm")]
+        { 
+            if self.pca9685.is_some() {
+                self.pca9685.as_mut().expect("no PCA").set_duty_cycle(chan, (duty_cycle * 4095.) as u16)?;
+            } else {
+                return Err(anyhow!("No pca9685 is defined"));
+            }
+        }
+        Ok(())
+    }
+
+    pub fn temperatures(&mut self) -> Result<Vec<f32>> {
+        Ok(vec![])
+    }
+
 
     // pub fn input(&mut self, _input_port: &Peripheral, _volume: f64) -> Result<()> {
     //     unimplemented!()

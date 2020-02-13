@@ -2,8 +2,6 @@ use jsonrpc_core::{Error, ErrorCode};
 use jsonrpc_derive::rpc;
 use std::sync::{Arc, Mutex};
 
-use log::*;
-
 use crate::purpledrop::{MoveDropResult, PurpleDrop};
 use crate::settings::Settings;
 use crate::eventbroker::EventBroker;
@@ -30,14 +28,12 @@ impl From<RpcError> for Error {
 
 pub struct PurpleDropRpc {
     purpledrop: Arc<Mutex<PurpleDrop>>,
-    eventbroker: Arc<Mutex<EventBroker>>,
 }
 
 impl PurpleDropRpc {
     pub fn new(settings: Settings, eventbroker: EventBroker) -> Result<PurpleDropRpc> {
         let new_rpc = PurpleDropRpc {
             purpledrop: Arc::new(Mutex::new(PurpleDrop::new(settings, eventbroker.clone())?)),
-            eventbroker: Arc::new(Mutex::new(eventbroker)),
         };
         Ok(new_rpc)
     }
@@ -52,7 +48,11 @@ pub trait Rpc {
     #[rpc(name = "set_electrode_pins")]
     fn set_electrode_pins(&self, pins: Vec<u32>) -> RpcResult<()>;
     #[rpc(name = "move_drop")]
-    fn move_drop(&self, size: [i32; 2], start: [i32; 2], direction: String) -> RpcResult<MoveDropResult>;
+    fn move_drop(&self, start: [i32; 2], size: [i32; 2], direction: String) -> RpcResult<MoveDropResult>;
+    #[rpc(name = "get_temperatures")]
+    fn get_temperatures(&self) -> RpcResult<Vec<f32>>;
+    #[rpc(name = "set_pwm_duty_cycle")]
+    fn set_pwm_duty_cycle(&self, chan: u8, duty_cycle: f32) -> RpcResult<()>;
 }
 
 impl Rpc for PurpleDropRpc {
@@ -84,8 +84,6 @@ impl Rpc for PurpleDropRpc {
     }
 
     fn move_drop(&self, start: [i32; 2], size: [i32; 2], direction: String) -> RpcResult<MoveDropResult> {
-        warn!("Move drop: {:?} {:?} {:?}", size, start, direction);
-
         let start = Location{x: start[0], y: start[1]};
         let size = Location{x: size[0], y: size[1]};
         let direction = match Direction::from_str(&direction) {
@@ -102,5 +100,25 @@ impl Rpc for PurpleDropRpc {
         };
 
         Ok(result)
+    }
+
+    fn get_temperatures(&self) -> RpcResult<Vec<f32>> {
+        let arc = self.purpledrop.clone();
+        let mut pd = arc.lock().unwrap();
+
+        match pd.temperatures() {
+            Ok(result) => Ok(result),
+            Err(e) => Err(RpcError(-4, format!("{:?}", e))),
+        }
+    }
+
+    fn set_pwm_duty_cycle(&self, chan: u8, duty_cycle: f32) -> RpcResult<()> {
+        let arc = self.purpledrop.clone();
+        let mut pd = arc.lock().unwrap();
+
+        if let Err(e) = pd.set_pwm_duty_cycle(chan, duty_cycle) {
+            return Err(RpcError(-5, format!("{:?}", e)));
+        }
+        Ok(())
     }
 }

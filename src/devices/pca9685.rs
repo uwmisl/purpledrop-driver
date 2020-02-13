@@ -61,6 +61,7 @@ impl From<Mode1> for u8 {
 pub struct Settings {
     pub bus: u8,
     pub address: u16,
+    pub frequency: f64,
 }
 
 #[cfg(target_arch = "arm")]
@@ -74,6 +75,7 @@ impl Settings {
             i2c,
         };
         pca.init()?;
+        pca.set_pwm_freq(self.frequency)?;
         debug!("Created pca9685!");
         Ok(pca)
     }
@@ -88,7 +90,7 @@ pub struct Pca9685 {
 #[cfg(target_arch = "arm")]
 impl Pca9685 {
     fn init(&mut self) -> Result<()> {
-        self.write_reg(Register::Mode1, Mode1::AutoIncrement)?;
+        self.write_reg(Register::Mode1, Mode1::AutoIncrement).expect("Writing PCA9685 reg");
         // self.i2c.write(&[MODE2, OUTDRV]).unwrap();
         self.initialized = true;
         Ok(())
