@@ -50,26 +50,8 @@ impl BackgroundTempReader {
         ret
     }
     pub fn start(mut sensors: Vec<devices::max31865::Max31865>, latest: Arc<Mutex<Vec<f32>>>) {
-        // tokio::spawn(async move {
-        //     let mut streams = Vec::new();
-        //     for f in frequencies {
-        //         streams.push(tokio::time::interval(Duration::from_secs_f32(1.0 / f)));
-        //     }   
-        //     loop {
-        //         let futures = streams.iter_mut().map(|s| {Box::pin(s.tick())});
-        //         let (_res, idx, _remaining_futures) = future::select_all(futures).await;
-        //         println!("Got sensor {:?}", idx);
-        //     }
-        // });
-        // let mut futures = Vec::new();
-        // for s in self.sensors {
-        //     futures.push(tokio::time::interval(Duration::from_secs_f32(1.0 / s.read_frequency)));
-        // }
-        // // let futures = self.sensors.iter().map(|s| {
-        // //     tokio::time::interval(Duration::from_secs_f32(1. / s.read_frequency))
-        // // }).collect();
         // Create a list of Interval streams, one per sensor, these will yield () periodically
-        // at the rate of each sensor. 
+        // at the rate of each sensor.
         let mut streams = Vec::new();
         for s in &sensors {
             streams.push(tokio::time::interval(Duration::from_secs_f32(1.0 / s.read_frequency)));
@@ -82,7 +64,6 @@ impl BackgroundTempReader {
                 // Convert the streams to a list of futures for select_all
                 let futures = streams.iter_mut().map(|s| Box::pin(s.tick()));
                 let (_res, idx, _remaining_futures) = futures::future::select_all(futures).await;
-                warn!("Got sensor {:?}", idx);
                 {
                     //let arc = latest.clone();
                     let mut locked = latest.lock().expect("Failed to lock BackgroundTempReader output");
@@ -449,7 +430,7 @@ impl PurpleDrop {
     /// Set pwm output channel on the PCA9685 to a particular duty cycle
     pub fn set_pwm_duty_cycle(&mut self, chan: u8, duty_cycle: f32) -> Result<()> {
         #[cfg(target_arch="arm")]
-        { 
+        {
             if self.pca9685.is_some() {
                 self.pca9685.as_mut().expect("no PCA").set_duty_cycle(chan, (duty_cycle * 4095.) as u16)?;
             } else {
