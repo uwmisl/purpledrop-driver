@@ -49,7 +49,7 @@ pub struct PdDriver {
     event_broker: EventBroker,
     event_tx: Arc<Mutex<broadcast::Sender<CapacitanceEvent>>>,
     pins: [bool; N_PINS],
-    bulk_capacitance: Arc<Mutex<[f32; N_PINS]>>,
+    capacitance_output: Arc<Mutex<([f32; N_PINS], f32)>>,
 }
 
 struct BulkMeasurementCollector {
@@ -75,7 +75,7 @@ impl BulkMeasurementCollector {
 
 fn receive_thread(
     mut broker: EventBroker,
-    bulk_capacitance: Arc<Mutex<[f32; N_PINS]>>,
+    output_store: Arc<Mutex<([f32; N_PINS], f32)>>,
     event_tx: Arc<Mutex<broadcast::Sender<CapacitanceEvent>>>,
     mut port: Box<dyn SerialPort>,
 )
@@ -106,9 +106,13 @@ fn receive_thread(
                                 Message::ActiveCapacitanceMsg(msg) => {
                                     let sender = event_tx.lock().unwrap();
 
+                                    let capacitance = (msg.measurement - msg.baseline) as f32 + CAP_OFFSET;
                                     // Send will fail with a SendError if there are no receivers, and this is OK
-                                    sender.send(CapacitanceEvent::Measurement((msg.measurement - msg.baseline) as f32 + CAP_OFFSET)).ok();
+                                    sender.send(CapacitanceEvent::Measurement(capacitance)).ok();
 
+                                    // store latest sample
+                                    let mut output = output_store.lock().unwrap();
+                                    output.1 = capacitance;
                                     // let pbmsg = protobuf::ActiveCapacitance{
                                     //     timestamp: Some(timestamp_now()),
                                     //     measurement: Some(protobuf::CapacitanceMeasurement{
@@ -134,12 +138,11 @@ fn receive_thread(
                                         broker.send(event);
 
                                         // Store latest sample
-                                        let mut output = bulk_capacitance.lock().unwrap();
+                                        let mut output = output_store.lock().unwrap();
                                         for i in 0..N_PINS {
-                                            output[i] = values[i];
+                                            output.0[i] = values[i];
                                         }
                                     });
-                                    info!("Bulk Capacitance!");
                                 },
                                 Message::ElectrodeAckMsg(_) => {
                                     let sender = event_tx.lock().unwrap();
@@ -163,8 +166,8 @@ impl PdDriver {
         let pins = [false; N_PINS];
         let (event_tx, _) = broadcast::channel(256);
         let event_tx = Arc::new(Mutex::new(event_tx));
-        let bulk_capacitance = Arc::new(Mutex::new([0.0; N_PINS]));
-        let obj = PdDriver { port, event_broker, event_tx, pins, bulk_capacitance };
+        let capacitance_output = Arc::new(Mutex::new(([0.0; N_PINS], 0.0)));
+        let obj = PdDriver { port, event_broker, event_tx, pins, capacitance_output };
         obj.init();
         obj
     }
@@ -173,12 +176,12 @@ impl PdDriver {
         // Start a serial port read thread
         let cloned_broker = self.event_broker.clone();
         let cloned_event_tx = self.event_tx.clone();
-        let cloned_bulk_capacitance = self.bulk_capacitance.clone();
+        let cloned_output = self.capacitance_output.clone();
         let cloned_port: Box<dyn SerialPort> = self.port.try_clone().unwrap();
         thread::Builder::new()
         .name("PdDriverRx".to_string())
         .spawn(move || {
-            receive_thread(cloned_broker, cloned_bulk_capacitance, cloned_event_tx, cloned_port);
+            receive_thread(cloned_broker, cloned_output, cloned_event_tx, cloned_port);
         }).unwrap();
     }
 }
@@ -234,9 +237,14 @@ impl Driver for PdDriver {
         Some(tx.subscribe())
     }
 
+    fn active_capacitance(&self) -> f32 {
+        let data = self.capacitance_output.lock().unwrap();
+        data.1
+    }
+
     fn bulk_capacitance(&self) -> Vec<f32> {
-        let data = self.bulk_capacitance.lock().unwrap();
-        (*data).to_vec()
+        let data = self.capacitance_output.lock().unwrap();
+        data.0.to_vec()
     }
 }
 

@@ -159,9 +159,19 @@ impl PurpleDrop {
     pub fn bulk_capacitance(&self) -> Result<Vec<f32>> {
         #[cfg(target_arch = "arm")]
         {
-        if self.driver.has_capacitance_feedback() {
-            return Ok(self.driver.bulk_capacitance());
+            if self.driver.has_capacitance_feedback() {
+                return Ok(self.driver.bulk_capacitance());
+            }
         }
+        Err(anyhow!("No capacitance measurement available"))
+    }
+
+    pub fn active_capacitance(&self) -> Result<f32> {
+        #[cfg(target_arch = "arm")]
+        {
+            if self.driver.has_capacitance_feedback() {
+                return Ok(self.driver.active_capacitance());
+            }
         }
         Err(anyhow!("No capacitance measurement available"))
     }

@@ -12,7 +12,7 @@ pub type CapacitanceReceiver = broadcast::Receiver<CapacitanceEvent>;
 
 pub trait Driver: Send {
     fn set_frequency(&mut self, frequency: f64) -> Result<()>;
-    
+
     fn clear_pins(&mut self);
 
     fn set_pin(&mut self, pin: usize, value: bool);
@@ -26,6 +26,8 @@ pub trait Driver: Send {
     fn has_capacitance_feedback(&self) -> bool;
 
     fn capacitance_channel(&self) -> Option<CapacitanceReceiver>;
+
+    fn active_capacitance(&self) -> f32;
 
     fn bulk_capacitance(&self) -> Vec<f32>;
 }

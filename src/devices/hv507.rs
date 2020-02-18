@@ -190,6 +190,10 @@ impl Driver for Hv507 {
     fn bulk_capacitance(&self) -> Vec<f32> {
         panic!("Not implemented");
     }
+
+    fn active_capacitance(&self) -> f32 {
+        panic!("Not implemented");
+    }
 }
 
 fn spin(duration: Duration) {
