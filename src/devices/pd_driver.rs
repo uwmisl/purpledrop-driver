@@ -12,6 +12,7 @@ use pd_driver_messages::{
     messages::{
         Message,
         ElectrodeEnableStruct,
+        ELECTRODE_ENABLE_ID,
     },
 };
 
@@ -144,10 +145,12 @@ fn receive_thread(
                                         }
                                     });
                                 },
-                                Message::ElectrodeAckMsg(_) => {
-                                    let sender = event_tx.lock().unwrap();
-                                    warn!("Sending ElectrodeAck notice");
-                                    sender.send(CapacitanceEvent::Ack).ok();
+                                Message::CommandAckMsg(msg) => {
+                                    if msg.acked_id == ELECTRODE_ENABLE_ID {
+                                        let sender = event_tx.lock().unwrap();
+                                        sender.send(CapacitanceEvent::Ack).ok();
+                                    }
+
                                 }
                                 _ => (),
                             }
