@@ -55,6 +55,8 @@ pub trait Rpc {
     fn get_temperatures(&self) -> RpcResult<Vec<f32>>;
     #[rpc(name = "set_pwm_duty_cycle")]
     fn set_pwm_duty_cycle(&self, chan: u8, duty_cycle: f32) -> RpcResult<()>;
+    #[rpc(name = "move_stepper")]
+    fn move_stepper(&self, steps: i16, period: u16) -> RpcResult<()>;
 }
 
 impl Rpc for PurpleDropRpc {
@@ -117,5 +119,13 @@ impl Rpc for PurpleDropRpc {
         let mut pd = arc.lock().unwrap();
 
         pd.set_pwm_duty_cycle(chan, duty_cycle).map_err(|e| RpcError(-5, format!("{:?}", e)))
+    }
+    
+    fn move_stepper(&self, steps: i16, period: u16) -> RpcResult<()> {
+        let arc = self.purpledrop.clone();
+        let mut pd = arc.lock().unwrap();
+
+        futures::executor::block_on(pd.move_stepper(steps, period))
+        .map_err(|e| RpcError(-7, format!("Error executing move stepper: {:?}", e)))
     }
 }

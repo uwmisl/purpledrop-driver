@@ -102,6 +102,7 @@ impl PurpleDrop {
         trace!("Initializing purpledrop...");
 
         let driver: Box<dyn devices::driver::Driver>;
+        #[cfg(target_arch="arm")]
         let max31865;
         #[cfg(target_arch="arm")]
         {
@@ -174,6 +175,31 @@ impl PurpleDrop {
             }
         }
         Err(anyhow!("No capacitance measurement available"))
+    }
+
+    pub async fn move_stepper(&mut self, steps: i16, period: u16) -> Result<()> {
+        
+        async fn wait_for_ack(rx: &mut devices::driver::CapacitanceReceiver) -> Result<()> {
+            loop {
+                match rx.recv().await? {
+                    CapacitanceEvent::StepperAck => return Ok(()),
+                    _ => (),
+                }
+            }
+        }
+
+        #[cfg(target_arch = "arm")]
+        {
+            let mut events = self.driver.capacitance_channel().unwrap();
+            self.driver.move_stepper(steps, period)?;
+            // return timeout(Duration::from_millis(200), wait_for_ack(&mut events))
+            // .await.context("Timed out waiting for stepper ack");
+            return match timeout(Duration::from_millis(200), wait_for_ack(&mut events)).await {
+                Ok(_) => Ok(()),
+                Err(e) => Err(anyhow!("Timed out waiting for stepper ack, {:?}", e)),
+            }
+        }
+        Err(anyhow!("No stepper support"))
     }
 
     // pub fn heat(

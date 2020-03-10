@@ -1,5 +1,6 @@
 use std::time::{Duration, Instant};
 
+use anyhow::anyhow;
 use log::*;
 use serde::Deserialize;
 use crate::devices::driver::{CapacitanceReceiver, Driver};
@@ -193,6 +194,10 @@ impl Driver for Hv507 {
 
     fn active_capacitance(&self) -> f32 {
         panic!("Not implemented");
+    }
+
+    fn move_stepper(&mut self, _steps: i16, _period: u16) -> Result<()> {
+        Err(anyhow!("Not implemented"))
     }
 }
 

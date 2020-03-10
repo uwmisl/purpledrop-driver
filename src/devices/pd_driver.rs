@@ -12,6 +12,7 @@ use pd_driver_messages::{
     messages::{
         Message,
         ElectrodeEnableStruct,
+        MoveStepperStruct,
         ELECTRODE_ENABLE_ID,
     },
 };
@@ -248,6 +249,13 @@ impl Driver for PdDriver {
     fn bulk_capacitance(&self) -> Vec<f32> {
         let data = self.capacitance_output.lock().unwrap();
         data.0.to_vec()
+    }
+
+    fn move_stepper(&mut self, steps: i16, period: u16) -> Result<()> {
+        let msg = MoveStepperStruct{steps, period};
+        let tx_bytes: Vec<u8> = serialize_msg(&msg);
+        self.port.write_all(&tx_bytes).unwrap();
+        Ok(())
     }
 }
 
