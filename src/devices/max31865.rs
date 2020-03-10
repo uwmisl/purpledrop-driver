@@ -192,33 +192,18 @@ impl Max31865 {
         Ok(resistance)
     }
 
-    /// Callendar-Van Dusen equation
-    /// $R = R₀(1 + aT + bT² + c(T - 100)T³)$
-    ///
-    /// R: resistance
-    /// T: temperature
-    /// R₀: resistance at 0C
-    /// a = 3.90830e-3
-    /// b = -5.77500e-7
-    /// c = -4.18301e-12 for -200C <= T <= 0C, 0 for 0C <= T <= +850C
-    ///
-    /// We will assume temperatures above 0C, so c = 0, allowing us to use the quadratic equation
+    /// Temperature calibration is per ZNI1000 RTD datasheet
     pub fn read_one_temperature(&mut self) -> Result<f32> {
         let resistance = self.read_one_resistance()? as f32;
-        let r0 = self.resist_zero;
 
-        let rtd_a = 3.90830e-3;
-        let rtd_b = -5.77500e-7;
+        let rtd_a = -412.6;
+        let rtd_b = 140.41;
+        let rtd_c = 0.00764;
+        let rtd_d = -6.25e-17;
+        let rtd_e = -1.25e-24;
 
-        // these are variable in the quadratic equation. note the mismatch
-        // between these and the rtd constants
-        let a = rtd_b;
-        let b = rtd_a;
-        let c = 1.0 - (resistance / r0);
-
-        let root = (-b + f32::sqrt(b * b - 4.0 * a * c)) / (2.0 * a);
-
-        Ok(root)
+        let temp = rtd_a + rtd_b * f32::sqrt(1.0 + rtd_c * resistance) + rtd_d * f32::powf(resistance, 5.0) + rtd_e * f32::powf(resistance, 7.0);
+        Ok(temp)
     }
 
     pub fn read_temperature(&mut self) -> Result<f32> {
