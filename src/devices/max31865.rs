@@ -94,6 +94,8 @@ impl Settings {
             0 => SlaveSelect::Ss0,
             1 => SlaveSelect::Ss1,
             2 => SlaveSelect::Ss2,
+            3 => SlaveSelect::Ss3,
+            4 => SlaveSelect::Ss4,
             _ => panic!("Bad select: {}", self.select),
         };
 
