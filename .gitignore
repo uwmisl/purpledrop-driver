@@ -18,9 +18,5 @@ _autosave-*
 
 .DS_Store
 
-# Output packages
-*.deb
-deb/
-
-# rust stuff
-target/
+*.pyc
+.mypy_cache
