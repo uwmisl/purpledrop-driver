@@ -10,7 +10,7 @@ from typing import AnyStr, Callable, List, Optional, Sequence
 
 import purpledrop.messages as messages
 import purpledrop.protobuf.messages_pb2 as messages_pb2
-from .messages import PurpleDropMessage, ElectrodeEnableMsg
+from .messages import PurpleDropMessage, ElectrodeEnableMsg, SetPwmMsg
 from .message_framer import MessageFramer, serialize
 
 def resolve_msg_filter(filt):
@@ -103,7 +103,7 @@ class PurpleDropDevice():
     """
     def __init__(self, port):
         self.port = port
-        self._ser = serial.Serial(self.port, timeout=0.01)
+        self._ser = serial.Serial(self.port, timeout=0.01, write_timeout=0.5)
         self._rx_thread = PurpleDropRxThread(self._ser, callback=self.message_callback)
         self._rx_thread.start()
         self.lock = threading.Lock()
@@ -127,6 +127,7 @@ class PurpleDropDevice():
 
     def send_message(self, msg: PurpleDropMessage):
         tx_bytes = serialize(msg.to_bytes())
+        print(f"Sending {tx_bytes} ")
         self._ser.write(tx_bytes)
 
     def message_callback(self, msg: PurpleDropMessage):
@@ -156,6 +157,7 @@ class PurpleDropController(object):
         self.purpledrop = purpledrop
         self.active_capacitance = 0.0
         self.bulk_capacitance = []
+        self.temperatures: Sequence[float] = []
         self.lock = threading.Lock()
         self.event_listeners = []
 
@@ -193,11 +195,12 @@ class PurpleDropController(object):
                 m = messages_pb2.CapacitanceMeasurement()
                 m.capacitance = float(raw)
                 m.drop_present = raw > 50
+                return m
             bulk_event.measurements.extend([make_cap_measurement(x) for x in self.bulk_capacitance])
             self.__fire_event(bulk_event)
 
         elif isinstance(msg, messages.TemperatureMsg):
-            self.temperatures = msg.measurements
+            self.temperatures = [float(x) / 100.0 for x in msg.measurements]
 
     def __fire_event(self, event):
         with self.lock:
@@ -291,7 +294,10 @@ class PurpleDropController(object):
             - chan: An integer specifying the channel to set
             - duty_cycle: Float specifying the duty cycle in range [0, 1.0]
         """
-        pass
+        msg = SetPwmMsg()
+        msg.chan = chan
+        msg.duty_cycle = duty_cycle
+        self.purpledrop.send_message(msg)
 
 class PurpleDropRpc(object):
     """Wrapper to define the RPC methods for remote control of purpledrop
@@ -352,4 +358,4 @@ class PurpleDropRpc(object):
             - chan: An integer specifying the channel to set
             - duty_cycle: Float specifying the duty cycle in range [0, 1.0]
         """
-        pass
+        return self.pdc.set_pwm_duty_cycle(chan, duty_cycle)

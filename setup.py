@@ -15,7 +15,6 @@ setup(
         'json-rpc~=1.13',
         'pyserial',
         'requests',
-        'websockets~=8.1'
     ],
     extras_require={
         'testing': [

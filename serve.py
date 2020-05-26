@@ -1,4 +1,6 @@
 import sys
+from gevent import monkey
+monkey.patch_all()
 
 import purpledrop.server as server
 from purpledrop.purpledrop import list_purpledrop_devices, PurpleDropDevice, PurpleDropController

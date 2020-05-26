@@ -1,5 +1,5 @@
 import struct
-from typing import Optional, Type
+from typing import Optional, Sequence, Type
 
 class PurpleDropMessage(object):
     @classmethod
@@ -12,10 +12,11 @@ class PurpleDropMessage(object):
         return msg_class.predictSize(buf)
 
     @classmethod
-    def findClassById(cls, id: int) -> Type:
+    def findClassById(cls, id: int) -> Optional[Type]:
         for sub_type in cls.__subclasses__():
             if getattr(sub_type, 'ID') == id:
                 return sub_type
+        return None
 
     @classmethod
     def from_bytes(cls, buf: bytearray) -> object:
@@ -37,14 +38,14 @@ class ActiveCapacitanceMsg(PurpleDropMessage):
         else:
             self.baseline = 0
             self.measurement = 0
-        
+
     @staticmethod
     def predictSize(buf: bytearray) -> int:
         return 5
 
     def fill(self, fill_data):
         self.baseline, self.measurement = struct.unpack_from("<HH", fill_data, 1)
-    
+
 class BulkCapacitanceMsg(PurpleDropMessage):
     ID = 2
 
@@ -54,7 +55,7 @@ class BulkCapacitanceMsg(PurpleDropMessage):
         else:
             self.start_index = 0
             self.count = 0
-            self.measurements = []
+            self.measurements: Sequence[int] = []
 
     @staticmethod
     def predictSize(buf: bytearray) -> int:
@@ -77,9 +78,9 @@ class CommandAckMsg(PurpleDropMessage):
     def __init__(self, fill_data: Optional[bytearray]=None):
         if fill_data is not None:
             self.fill(fill_data)
-        else: 
+        else:
             self.acked_id = 0
-    
+
     @staticmethod
     def predictSize(buf: bytearray) -> int:
         return 2
@@ -94,13 +95,13 @@ class ElectrodeEnableMsg(PurpleDropMessage):
 
     def __init__(self, fill_data: Optional[bytearray]=None):
         self.values = [0] * 16
-    
+
     @staticmethod
     def predictSize(buf: bytearray) -> int:
         return 16
-        
+
     def to_bytes(self):
-        return struct.pack("<B" + "B" * len(self.values), 
+        return struct.pack("<B" + "B" * len(self.values),
             *([self.ID] + self.values))
 
 class SetParameterMsg(PurpleDropMessage):
@@ -158,6 +159,22 @@ class SetParameterMsg(PurpleDropMessage):
         return "SetParameterMsg(param_idx=%d, param_value=%d, write_flag=%d)" % \
             (self.param_idx(), self.param_value_int(), self.write_flag())
 
+class SetPwmMsg(PurpleDropMessage):
+    ID = 9
+
+    def __init__(self, fill_data: Optional[bytearray]=None):
+        if fill_data is not None:
+            self.fill(fill_data)
+        else:
+            self.chan = 0
+            self.duty_cycle = 0.0
+
+    def fill(self, buf: bytes):
+        raise RuntimeError("Not implemented")
+
+    def to_bytes(self) -> bytes:
+        return struct.pack("<BBH", self.ID, self.chan, int(self.duty_cycle * 4096))
+
 class TemperatureMsg(PurpleDropMessage):
     ID = 7
 
@@ -165,7 +182,7 @@ class TemperatureMsg(PurpleDropMessage):
         if fill_data is not None:
             self.fill(fill_data)
         else:
-            self.measurements = []
+            self.measurements: Sequence[int] = []
 
     @staticmethod
     def predictSize(buf: bytearray) -> int:
@@ -173,20 +190,20 @@ class TemperatureMsg(PurpleDropMessage):
             return 0
         else:
             return buf[1]*2 + 2
-    
+
     def fill(self, buf: bytearray):
         if len(buf) < 2:
             raise ValueError("Insufficient bytes for TemperatureMsg")
         count = buf[1]
         if len(buf) < count * 2 + 2:
             raise ValueError("Insufficient bytes for TemperatureMsg")
-        
+
         self.measurements = struct.unpack_from("<" + "h"*count, buf, 2)
-    
-    def to_bytes(self) -> bytearray:
+
+    def to_bytes(self) -> bytes:
         count = len(self.measurements)
         return struct.pack("<BB"+"h"*count, [self.ID, count] + self.measurements)
-    
+
     def __str__(self):
         return "TemperatureMsg(measurements=%s)" % str(self.measurements)
 
@@ -207,17 +224,17 @@ class HvRegulatorMsg(PurpleDropMessage):
             return 0
         else:
             return buf[1]*2 + 2
-    
+
     def fill(self, buf: bytearray):
         if len(buf) < 7:
             raise ValueError("Insufficient bytes for HvRegulatorMsg")
-        
-        self.voltage = struct.unpack_from("<f" , buf, 1)[0]     
+
+        self.voltage = struct.unpack_from("<f" , buf, 1)[0]
         self.v_target_out = struct.unpack_from("<h", buf, 5)[0]
-    
+
     def to_bytes(self) -> bytearray:
         return struct.pack("<Bfh", [self.ID, self.voltage, self.v_target_out])
-    
+
     def __str__(self):
         return "HvRegulatorMsg(voltage=%0.1f, v_target_out=%d)" % \
             (self.voltage, self.v_target_out)
