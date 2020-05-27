@@ -53,11 +53,13 @@ def run_server(purpledrop: PurpleDropController):
     ws_server.start()
 
     def handle_event(event):
+        data = event.SerializeToString()
         for client in ws_server.clients.values():
-            client.ws.send(event.SerializeToString())
+            client.ws.send(data)
 
     purpledrop.register_event_listener(handle_event)
 
     while(True):
         gevent.sleep(1.0)
+
 

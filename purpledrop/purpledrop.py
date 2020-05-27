@@ -135,11 +135,9 @@ class PurpleDropDevice():
             for l in self.listeners:
                 l.push_msg(msg)
 
-class MoveDropResult(object):
+class MoveDropResult(dict):
         def __init__(self, success=False, closed_loop=False, closed_loop_result=None):
-            self.success = success
-            self.closed_loop = closed_loop
-            self.closed_loop_result = closed_loop_result
+            dict.__init__(self, success=success, closed_loop=closed_loop, closed_loop_result=closed_loop_result)
 
 class MoveDropClosedLoopResult(object):
     def __init__(self,
@@ -180,9 +178,9 @@ class PurpleDropController(object):
     def __message_callback(self, msg):
         if isinstance(msg, messages.ActiveCapacitanceMsg):
             self.active_capacitance = msg.measurement - msg.baseline
-            cap_event = messages_pb2.ActiveCapacitance()
-            cap_event.measurement.capacitance = float(self.active_capacitance)
-            cap_event.measurement.drop_present = False
+            cap_event = messages_pb2.PurpleDropEvent()
+            cap_event.active_capacitance.measurement.capacitance = float(self.active_capacitance)
+            cap_event.active_capacitance.measurement.drop_present = False
             self.__fire_event(cap_event)
 
         elif isinstance(msg, messages.BulkCapacitanceMsg):
@@ -190,13 +188,13 @@ class PurpleDropController(object):
                 self.bulk_capacitance.extend([0] * (msg.start_index + msg.count - len(self.bulk_capacitance)))
             for i in range(msg.count):
                 self.bulk_capacitance[msg.start_index + i] = msg.measurements[i]
-            bulk_event = messages_pb2.BulkCapacitance()
+            bulk_event = messages_pb2.PurpleDropEvent()
             def make_cap_measurement(raw):
                 m = messages_pb2.CapacitanceMeasurement()
                 m.capacitance = float(raw)
                 m.drop_present = raw > 50
                 return m
-            bulk_event.measurements.extend([make_cap_measurement(x) for x in self.bulk_capacitance])
+            bulk_event.bulk_capacitance.measurements.extend([make_cap_measurement(x) for x in self.bulk_capacitance])
             self.__fire_event(bulk_event)
 
         elif isinstance(msg, messages.TemperatureMsg):
@@ -259,13 +257,13 @@ class PurpleDropController(object):
         """
 
         msg = ElectrodeEnableMsg()
-        event = messages_pb2.ElectrodeState()
-        event.electrodes[:] = [False] * 128
+        event = messages_pb2.PurpleDropEvent()
+        event.electrode_state.electrodes[:] = [False] * 128
         for p in pins:
             word = int(p / 8)
             bit = p % 8
             msg.values[word] |= (1<<bit)
-            event.electrodes[p] = True
+            event.electrode_state.electrodes[p] = True
         self.purpledrop.send_message(msg)
         self.__fire_event(event)
 
