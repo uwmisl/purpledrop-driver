@@ -216,7 +216,7 @@ class PurpleDropController(object):
         """
         return {
             "layout": {
-                "pins": [
+                "grid": [
                     [None, None, None, None, None, None, 28, 98, None, None, None, None, None, None],
                     [None, None, None, None, None, None, 27, 99, None, None, None, None, None, None],
                     [11, 14, 16, 18, 20, 23, 26, 100, 102, 105, 109, 111, 113, 114],
@@ -228,6 +228,146 @@ class PurpleDropController(object):
                     [None, None, None, None, None, None, 40, 88, None, None, None, None, None, None],
                     [None, None, None, None, None, None, 39, 89, None, None, None, None, None, None],
                     [None, None, None, None, None, None, 38, 90, None, None, None, None, None, None],
+                ], 
+                "extra": [
+                    {
+                        "class": "reservoirB",
+                        "id": 0,
+                        "origin": (-0.5, 2.5),
+                        "rotation": 180.0,
+                        "electrodes": [
+                            {
+                                "pin_class": "A",
+                                "pin": 8,
+                                "polygon": [(0, -0.5), (-0.8, -0.5), (-0.8, -2), (2.4, -2), (2.4, 2), (-0.8, 2), (-0.8, 0.5), (0, 0.5)],
+                                "origin": (2.1, 0.00),
+                            },
+                            {
+                                "pin_class": "B",
+                                "pin": 9,
+                                "polygon": [(-0.8, -0.5), (0.8, -0.5), (0.8, 0.5), (-0.8, 0.5)],
+                                "origin": (1.2, 0.0),
+                            },
+                            {
+                                "pin_class": "C",
+                                "pin": 10,
+                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
+                                "origin": (0.0, 0.0),
+                            },
+                        ],
+                    },
+                    {
+                        "class": "reservoirA",
+                        "id": 1,
+                        "origin": (-0.5, 7.5),
+                        "rotation": 180.0,
+                        "electrodes": [
+                            {
+                                "pin_class": "A",
+                                "pin": 58,
+                                "polygon": [(-0.5, -1.5), (3.5, -1.5), (3.5, 2.5), (-0.5, 2.5), (-0.5, 1), (0.5, 1), (0.5, 0), (-0.5, 0)],
+                                "origin": (1.5, -0.5),
+                            },
+                            {
+                                "pin_class": "B",
+                                "pin": 57,
+                                "polygon": [(-0.5, -0.5), (1.0, -0.5), (1.0, 0.5), (-0.5, 0.5)],
+                                "origin": (1.0, 0.0),
+                            },
+                            {
+                                "pin_class": "C",
+                                "pin": 56,
+                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
+                                "origin": (0.0, 0.0),
+                            },
+                            {
+                                "pin_class": "C",
+                                "pin": 52,
+                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
+                                "origin": (0.5, -1.0),
+                            },
+                            {
+                                "pin_class": "C",
+                                "pin": 59,
+                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
+                                "origin": (0.5, 1.0),
+                            },
+                        ],
+                    },
+                    {
+                        "class": "reservoirA",
+                        "id": 3,
+                        "origin": (14.5, 7.5),
+                        "electrodes": [
+                            {
+                                "pin_class": "A",
+                                "pin": 58,
+                                "polygon": [(-0.5, -1.5), (3.5, -1.5), (3.5, 2.5), (-0.5, 2.5), (-0.5, 1), (0.5, 1), (0.5, 0), (-0.5, 0)],
+                                "origin": (1.5, -0.5),
+                            },
+                            {
+                                "pin_class": "B",
+                                "pin": 57,
+                                "polygon": [(-0.5, -0.5), (1.0, -0.5), (1.0, 0.5), (-0.5, 0.5)],
+                                "origin": (1.0, 0.0),
+                            },
+                            {
+                                "pin_class": "C",
+                                "pin": 56,
+                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
+                                "origin": (0.0, 0.0),
+                            },
+                            {
+                                "pin_class": "C",
+                                "pin": 52,
+                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
+                                "origin": (0.5, -1.0),
+                            },
+                            {
+                                "pin_class": "C",
+                                "pin": 59,
+                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
+                                "origin": (0.5, 1.0),
+                            },
+                        ],
+                    },
+                    {
+                        "class": "reservoirA",
+                        "id": 4,
+                        "origin": (14.5, 2.5),
+                        "electrodes": [
+                            {
+                                "pin_class": "A",
+                                "pin": 120,
+                                "polygon": [(-0.5, -1.5), (3.5, -1.5), (3.5, 2.5), (-0.5, 2.5), (-0.5, 1), (0.5, 1), (0.5, 0), (-0.5, 0)],
+                                "origin": (1.5, -0.5),
+                            },
+                            {
+                                "pin_class": "B",
+                                "pin": 119,
+                                "polygon": [(-0.5, -0.5), (1.0, -0.5), (1.0, 0.5), (-0.5, 0.5)],
+                                "origin": (1.0, 0.0),
+                            },
+                            {
+                                "pin_class": "C",
+                                "pin": 118,
+                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
+                                "origin": (0.0, 0.0),
+                            },
+                            {
+                                "pin_class": "C",
+                                "pin": 117,
+                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
+                                "origin": (0.5, -1.0),
+                            },
+                            {
+                                "pin_class": "C",
+                                "pin": 121,
+                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
+                                "origin": (0.5, 1.0),
+                            },
+                        ],
+                    }
                 ]
             }
         }
