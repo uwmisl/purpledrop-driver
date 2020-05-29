@@ -156,6 +156,7 @@ class PurpleDropController(object):
         self.active_capacitance = 0.0
         self.bulk_capacitance = []
         self.temperatures: Sequence[float] = []
+        self.hv_supply_voltage = 0.0
         self.lock = threading.Lock()
         self.event_listeners = []
 
@@ -197,6 +198,13 @@ class PurpleDropController(object):
             bulk_event.bulk_capacitance.measurements.extend([make_cap_measurement(x) for x in self.bulk_capacitance])
             self.__fire_event(bulk_event)
 
+        elif isinstance(msg, messages.HvRegulatorMsg):
+            self.hv_supply_voltage = msg.voltage
+            event = messages_pb2.PurpleDropEvent()
+            event.hv_regulator.voltage = msg.voltage
+            event.hv_regulator.v_target_out = msg.v_target_out
+            self.__fire_event(event)
+
         elif isinstance(msg, messages.TemperatureMsg):
             self.temperatures = [float(x) / 100.0 for x in msg.measurements]
 
@@ -228,7 +236,7 @@ class PurpleDropController(object):
                     [None, None, None, None, None, None, 40, 88, None, None, None, None, None, None],
                     [None, None, None, None, None, None, 39, 89, None, None, None, None, None, None],
                     [None, None, None, None, None, None, 38, 90, None, None, None, None, None, None],
-                ], 
+                ],
                 "extra": [
                     {
                         "class": "reservoirB",
@@ -437,6 +445,9 @@ class PurpleDropController(object):
         msg.duty_cycle = duty_cycle
         self.purpledrop.send_message(msg)
 
+    def get_hv_supply_voltage(self):
+        return self.hv_supply_voltage
+
 class PurpleDropRpc(object):
     """Wrapper to define the RPC methods for remote control of purpledrop
     """
@@ -497,3 +508,6 @@ class PurpleDropRpc(object):
             - duty_cycle: Float specifying the duty cycle in range [0, 1.0]
         """
         return self.pdc.set_pwm_duty_cycle(chan, duty_cycle)
+
+    def get_hv_supply_voltage(self) -> float:
+        return self.pdc.get_hv_supply_voltage()

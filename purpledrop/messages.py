@@ -232,7 +232,7 @@ class HvRegulatorMsg(PurpleDropMessage):
         self.voltage = struct.unpack_from("<f" , buf, 1)[0]
         self.v_target_out = struct.unpack_from("<h", buf, 5)[0]
 
-    def to_bytes(self) -> bytearray:
+    def to_bytes(self) -> bytes:
         return struct.pack("<Bfh", [self.ID, self.voltage, self.v_target_out])
 
     def __str__(self):
