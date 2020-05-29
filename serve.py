@@ -1,7 +1,7 @@
-import sys
+
 from gevent import monkey
 monkey.patch_all()
-
+import sys
 import purpledrop.server as server
 from purpledrop.purpledrop import list_purpledrop_devices, PurpleDropDevice, PurpleDropController
 
@@ -17,4 +17,4 @@ elif len(devices) > 1:
 dev = PurpleDropDevice(devices[0].device)
 controller = PurpleDropController(dev)
 
-server.run_server(controller)
+server.run_server(controller, "localhost:5000")

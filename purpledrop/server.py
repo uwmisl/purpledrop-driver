@@ -1,4 +1,4 @@
-"""Defines an HTTP server for controlling the PurpleDrop. 
+"""Defines an HTTP server for controlling the PurpleDrop.
 
 The server acts as a gateway between the PurpleDrop USB device, and any clients.
 It also serves a single-page javascript app, which provides a user interface for
@@ -12,11 +12,12 @@ The server consists of:
 import gevent
 from gevent.pywsgi import WSGIServer
 from geventwebsocket import WebSocketServer, WebSocketApplication, Resource
+from geventwebsocket.exceptions import WebSocketError
 from flask import Flask
 from jsonrpc.backend.flask import api
 
 from .purpledrop import PurpleDropController, PurpleDropRpc
-
+from .video_client import VideoClientProtobuf
 
 class Config(object):
     """Collects configuration parameters for server and defines defaults
@@ -31,9 +32,11 @@ class EventApp(WebSocketApplication):
     handle incoming data, but atm this server only broadcasts events
     """
     pass
-    
 
-def run_server(purpledrop: PurpleDropController):
+
+def run_server(purpledrop: PurpleDropController, video_host=None):
+    lock = gevent.lock.Semaphore()
+
     flask_app = Flask(__name__)
 
     flask_app.add_url_rule(
@@ -45,17 +48,34 @@ def run_server(purpledrop: PurpleDropController):
 
     # Register all public methods of pdrpc as RPC calls
     api.dispatcher.build_method_map(pdrpc)
-    
+
     http_server = WSGIServer(('', 7000), flask_app)
     http_server.start()
 
     ws_server = WebSocketServer(('', 7001), Resource([('^/', EventApp)]), debug=False)
     ws_server.start()
 
+
     def handle_event(event):
         data = event.SerializeToString()
-        for client in ws_server.clients.values():
-            client.ws.send(data)
+        with lock:
+            for client in ws_server.clients.values():
+                client.ws.send(data)
+
+    def handle_video_update(image_event, transform_event):
+        for event in [transform_event, image_event]:
+            data = event.SerializeToString()
+            with lock:
+                clients = ws_server.clients.values()
+                for client in clients:
+                    try:
+                        client.ws.send(data)
+                    except WebSocketError:
+                        pass
+
+    video_client = None
+    if video_host is not None:
+        video_client = VideoClientProtobuf(video_host, handle_video_update)
 
     purpledrop.register_event_listener(handle_event)
 
