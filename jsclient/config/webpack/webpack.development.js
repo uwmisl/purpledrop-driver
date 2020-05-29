@@ -13,8 +13,13 @@ module.exports = {
         contentBase: paths.outputPath,
         port: 3000,
         proxy: {
-            '/rpc': 'http://localhost:8000',
-            //'/rpc': 'http://10.144.112.21:8000',
+            //'/rpc': 'http://localhost:8000',
+            //'/rpc': 'http://10.144.112.21:7000',
+            '/rpc': 'http://192.168.0.2:7000',
+            // '/ws': {
+            //     target: 'ws://10.144.112.21:7001/',
+            //     pathRewrite: {'^/ws': ''}
+            // }
         },
         open: true,
         /*overlay: {

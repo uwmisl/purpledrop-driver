@@ -20,9 +20,6 @@ module.exports = {
         new HtmlWebpackPlugin({
             template: paths.templatePath,
         }),
-        new webpack.ProvidePlugin({
-            m: 'mithril' //Global access
-        }),
         new WebpackShellPluginNext({
             onBuildStart: {
                 scripts: ['yarn run pbjs -t static-module -w es6 ../protobuf/messages.proto -o src/protobuf.js'],

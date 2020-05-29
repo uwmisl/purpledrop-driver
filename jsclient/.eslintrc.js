@@ -6,11 +6,10 @@ module.exports = {
         node: true,
     },
     globals: {
-        'm': true
     },
     extends: [
         'eslint:recommended',
-        'plugin:mithril/recommended'
+        'plugin:react/recommended',
     ],
     parserOptions: {
         sourceType: 'module',
@@ -21,9 +20,7 @@ module.exports = {
     },
     rules: {
         'comma-dangle': ['error', 'always-multiline'],
-        'indent': ['error', 4],
         'linebreak-style': ['error', 'unix'],
-        'quotes': ['error', 'single'],
         'semi': ['error', 'always'],
         'no-unused-vars': ['warn'],
         'no-console': 0,

@@ -14,9 +14,6 @@ module.exports = function(api) {
     let plugins = [
         [
             'transform-react-jsx',
-            {
-                pragma: 'm'
-            }
         ],
         '@babel/plugin-proposal-class-properties',
         '@babel/plugin-transform-runtime'
