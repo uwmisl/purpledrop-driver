@@ -232,7 +232,7 @@ class PurpleDropController(object):
                 "extra": [
                     {
                         "class": "reservoirB",
-                        "id": 0,
+                        "id": 1,
                         "origin": (-0.5, 2.5),
                         "rotation": 180.0,
                         "electrodes": [
@@ -258,7 +258,7 @@ class PurpleDropController(object):
                     },
                     {
                         "class": "reservoirA",
-                        "id": 1,
+                        "id": 2,
                         "origin": (-0.5, 7.5),
                         "rotation": 180.0,
                         "electrodes": [
@@ -301,43 +301,6 @@ class PurpleDropController(object):
                         "electrodes": [
                             {
                                 "pin_class": "A",
-                                "pin": 58,
-                                "polygon": [(-0.5, -1.5), (3.5, -1.5), (3.5, 2.5), (-0.5, 2.5), (-0.5, 1), (0.5, 1), (0.5, 0), (-0.5, 0)],
-                                "origin": (1.5, -0.5),
-                            },
-                            {
-                                "pin_class": "B",
-                                "pin": 57,
-                                "polygon": [(-0.5, -0.5), (1.0, -0.5), (1.0, 0.5), (-0.5, 0.5)],
-                                "origin": (1.0, 0.0),
-                            },
-                            {
-                                "pin_class": "C",
-                                "pin": 56,
-                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
-                                "origin": (0.0, 0.0),
-                            },
-                            {
-                                "pin_class": "C",
-                                "pin": 52,
-                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
-                                "origin": (0.5, -1.0),
-                            },
-                            {
-                                "pin_class": "C",
-                                "pin": 59,
-                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
-                                "origin": (0.5, 1.0),
-                            },
-                        ],
-                    },
-                    {
-                        "class": "reservoirA",
-                        "id": 4,
-                        "origin": (14.5, 2.5),
-                        "electrodes": [
-                            {
-                                "pin_class": "A",
                                 "pin": 120,
                                 "polygon": [(-0.5, -1.5), (3.5, -1.5), (3.5, 2.5), (-0.5, 2.5), (-0.5, 1), (0.5, 1), (0.5, 0), (-0.5, 0)],
                                 "origin": (1.5, -0.5),
@@ -367,7 +330,44 @@ class PurpleDropController(object):
                                 "origin": (0.5, 1.0),
                             },
                         ],
-                    }
+                    },
+                    {
+                        "class": "reservoirA",
+                        "id": 4,
+                        "origin": (14.5, 2.5),
+                        "electrodes": [
+                            {
+                                "pin_class": "A",
+                                "pin": 71,
+                                "polygon": [(-0.5, -1.5), (3.5, -1.5), (3.5, 2.5), (-0.5, 2.5), (-0.5, 1), (0.5, 1), (0.5, 0), (-0.5, 0)],
+                                "origin": (1.5, -0.5),
+                            },
+                            {
+                                "pin_class": "B",
+                                "pin": 72,
+                                "polygon": [(-0.5, -0.5), (1.0, -0.5), (1.0, 0.5), (-0.5, 0.5)],
+                                "origin": (1.0, 0.0),
+                            },
+                            {
+                                "pin_class": "C",
+                                "pin": 73,
+                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
+                                "origin": (0.0, 0.0),
+                            },
+                            {
+                                "pin_class": "C",
+                                "pin": 70,
+                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
+                                "origin": (0.5, -1.0),
+                            },
+                            {
+                                "pin_class": "C",
+                                "pin": 74,
+                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
+                                "origin": (0.5, 1.0),
+                            },
+                        ],
+                    },
                 ]
             }
         }
