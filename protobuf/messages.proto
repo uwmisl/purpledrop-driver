@@ -60,6 +60,11 @@ message ImageTransform {
     int32 image_height = 5;
 }
 
+message HvRegulator {
+    float voltage = 1;
+    float v_target_out = 2;
+}
+
 message PurpleDropEvent {
     oneof msg {
         ElectrodeLayout electrode_layout = 1;
@@ -69,5 +74,6 @@ message PurpleDropEvent {
         Settings settings = 5;
         BulkCapacitance bulk_capacitance = 6;
         ActiveCapacitance active_capacitance = 7;
+        HvRegulator hv_regulator = 8;
     }
 }
