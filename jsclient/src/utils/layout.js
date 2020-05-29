@@ -14,8 +14,7 @@ class Layout {
   constructor(layout) {
     this.grid = layout.grid;
     this.extra = layout.extra;
-    let memoized_polygons = null;
-
+    this.memoized_polygons = null;
   }
 
   electrode_polygons() {
@@ -106,7 +105,7 @@ class Layout {
     if (typeof size === 'undefined') {
       size = (1, 1);
     }
-    origin = this.findPinLocation(pin);
+    let origin = this.findPinLocation(pin);
     if(origin === null) {
       return [];
     }

@@ -105,6 +105,7 @@ ElectrodeSvg.propTypes = {
   onClick: PropTypes.func,
   styleMap: PropTypes.object,
   classMap: PropTypes.object,
+  svgId: PropTypes.string,
 };
 
 ElectrodeSvg.defaultProps = {

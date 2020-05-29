@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import ElectrodeSvg from './ElectrodeSvg';
 
-import _css from './LiveView.css';
+import './LiveView.css';
 
 class LiveView extends React.Component {
     constructor(props) {
@@ -10,7 +10,7 @@ class LiveView extends React.Component {
         this.state = {
             brushSize: 1,
             hoverPins: [],
-        }
+        };
         this.decrementBrushSize = this.decrementBrushSize.bind(this);
         this.incrementBrushSize = this.incrementBrushSize.bind(this);
         this.onMouseOver = this.onMouseOver.bind(this);
@@ -38,12 +38,12 @@ class LiveView extends React.Component {
         this.setState({hoverPins: pins});
     }
 
-    onMouseOut(pin) {
+    onMouseOut() {
         this.setState({hoverPins: []});
     }
 
     onClick(e, pin) {
-        let active_pins = []
+        let active_pins = [];
         // control key means leave currently active alone
         // shift key means deactivate instead of activate
         if(e.ctrlKey || e.shiftKey) {
@@ -71,7 +71,6 @@ class LiveView extends React.Component {
 
     render() {
         let classMap = {};
-        let styleMap = {};
         for(let i=0; i<128; i++) {
             classMap[i] = "electrode";
             if(this.state.hoverPins.includes(i)) {
@@ -109,6 +108,16 @@ LiveView.defaultProps = {
     imageWidth: 600,
     imageHeight: 400,
     electrodeState: Array(128).fill(false),
-}
+};
+
+LiveView.propTypes = {
+    layout: PropTypes.object,
+    electrodeState: PropTypes.arrayOf(PropTypes.bool),
+    onSetElectrodes: PropTypes.func,
+    image: PropTypes.string,
+    transform: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number)),
+    imageHeight: PropTypes.number,
+    imageWidth: PropTypes.number,
+};
 
 export default LiveView;

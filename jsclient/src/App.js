@@ -18,7 +18,6 @@ import LiveView from './components/LiveView';
 // Register an App instance and feed it state updates
 function hookup_remote_state(app) {
   let imageObjectUrl = null;
-  let imageTimestamp = Date.now();
   
   function handle_event(event) {
     if (event.electrodeState) {
@@ -36,7 +35,6 @@ function hookup_remote_state(app) {
       // Free the previous frame from store
       URL.revokeObjectURL(imageObjectUrl);
       imageObjectUrl = newImageUrl;
-      imageTimestamp = Date.now();
     } else if(event.imageTransform) {
       let newTransform = null;
       if (event.imageTransform.transform.length > 0) {
@@ -53,14 +51,14 @@ function hookup_remote_state(app) {
         imageHeight: event.imageTransform.imageHeight,
       });
     } else if(event.bulkCapacitance) {
-      // app.setState({
-      //   bulk_capacitance: event.bulkCapacitance.measurements,
-      // });
+      app.setState({
+        bulk_capacitance: event.bulkCapacitance.measurements,
+      });
     } else if(event.hvRegulator) {
-      // app.setState({
-      //   voltage: event.hvRegulator.voltage,
-      //   vTargetOut: event.hvRegulator.vTargetOut,
-      // });
+      app.setState({
+        voltage: event.hvRegulator.voltage,
+        vTargetOut: event.hvRegulator.vTargetOut,
+      });
     }
   }
 
@@ -78,8 +76,8 @@ function hookup_remote_state(app) {
   return {
     disconnect() {
       socket.close();
-    }
-  }
+    },
+  };
 }
 
 class App extends React.Component {
