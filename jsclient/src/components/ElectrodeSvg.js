@@ -16,7 +16,7 @@ function transform(points, M) {
 // Creates a transform to fill the layout within the SVG window
 // allowing for a certain percent MARGIN around it
 function default_transform(layout, svg_width, svg_height) {
-  const MARGIN = 0.1;
+  const MARGIN = 0.05;
   const FILL_FACTOR = 1 - 2*MARGIN;
   let extent = layout.extent();
   let board_width = extent.maxX - extent.minX;
@@ -88,7 +88,7 @@ class ElectrodeSvg extends React.Component {
   
     
     return <div>
-      <svg id={this.props.svgId} width={this.props.width} height={this.props.height} viewBox={`0 0 ${this.props.width} ${this.props.height}`}>
+      <svg id={this.props.svgId} viewBox={`0 0 ${this.props.width} ${this.props.height}`}>
         {polygons}
       </svg>
     </div>;

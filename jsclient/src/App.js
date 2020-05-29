@@ -6,14 +6,18 @@ import {
   Route,
   Link,
 } from 'react-router-dom';
+import {ResizableBox} from 'react-resizable';
+import 'react-resizable/css/styles.css';
+
 import PdRpc from 'rpc';
 import PdSocket from 'pdsocket';
 import Layout from './utils/layout';
-
-console.log("PD: ", PdRpc);
-
+import Preloader from './components/Preloader';
 import CapacitanceDisplay from './components/CapacitanceDisplay';
 import LiveView from './components/LiveView';
+import Stats from './components/Stats';
+import mislLogo from './images/misl-logo.svg';
+import uwLogo from './images/uw-logo.png';
 
 // Register an App instance and feed it state updates
 function hookup_remote_state(app) {
@@ -99,7 +103,7 @@ class App extends React.Component {
   render() {
     if(typeof this.state.layout === 'undefined') {
       return <div>
-        <p>Loading board information...</p>
+        <Preloader />
       </div>;
     } else {
       return <Router>
@@ -138,7 +142,44 @@ class App extends React.Component {
               />
             </Route>
             <Route path="/">
-              <h1>home</h1>
+              <div className="page-layout" style={{display: "flex", flexDirection: "column", alignItems: "center"}}>
+                <div className='logobanner'>
+                    <div><img className='uw-logo' src={uwLogo} /></div>
+                    <div><img className='misl-logo' src={mislLogo} /></div>
+                </div>
+                <div className='title' style={{display: 'flex', justifyContent: 'space-around', width:"100%", maxWidth:"800px"}}>
+                  <div></div>
+                  <div><h1 style={{textAlign: "center"}}>Purple Drop Dashboard</h1></div>
+                  <div style={{display: 'flex',  alignItems: 'center'}}><a href="#"
+                      onClick={() => {
+                          // openModal({
+                          //     title: '',
+                          //     content: usage,
+                          //     buttons: [
+                          //         {id: 'close', text: 'Close'},
+                          //     ],
+                          //});
+                      }}>Help</a>
+                  </div>
+                </div>
+                <ResizableBox className="box" minConstraints={[250, 250]} width={600} height={525} lockAspectRatio={true}>
+                  <LiveView 
+                    image={this.state.image} 
+                    transform={this.state.imageTransform}
+                    electrodeState={this.state.electrodeState}
+                    layout={this.state.layout}
+                    imageWidth={this.state.imageWidth}
+                    imageHeight={this.state.imageHeight}
+                    onSetElectrodes={(pins) => {this.state.pdrpc.setElectrodePins(pins);}}
+                  />
+                </ResizableBox>
+                <ResizableBox className="box" minConstraints={[150, 150]} width={400} height={300} lockAspectRatio={true}>
+                  <CapacitanceDisplay capacitance={this.state.bulk_capacitance} layout={this.state.layout} width={400} height={400} />
+                </ResizableBox>
+                <ResizableBox className="box" minConstraints={[150, 150]} width={400} height={300} lockAspectRatio={true}>
+                  <Stats />
+                </ResizableBox>
+              </div>;
             </Route>
           </Switch>
         </div>

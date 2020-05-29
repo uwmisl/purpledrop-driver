@@ -80,7 +80,7 @@ class LiveView extends React.Component {
                 classMap[i] += " active";
             }
         }
-        return <div>
+        return <div style={{display: 'flex', flexDirection: 'column'}}>
             <div className='electrode-grid-wrapper'>
                 <img className='electrode-grid-img' src={this.props.image || ''} />
                 <ElectrodeSvg

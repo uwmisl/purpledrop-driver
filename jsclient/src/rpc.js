@@ -10,8 +10,14 @@ export function PdRpc() {
           },
           body: msg,
       }).then(async (response) => {
-          let body = await response.text();
-          rpc.messageHandler(body);
+          if(response.ok) {
+            let body = await response.text();
+            rpc.messageHandler(body);
+          } else {
+              console.log("Failed RPC fetch: ", response.statusText);
+          }
+      }, (reason) => {
+          console.log("Failed RPC fetch: ", reason);
       });
   };
 

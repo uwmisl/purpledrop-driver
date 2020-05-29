@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import ElectrodeSvg from './ElectrodeSvg';
 import colormap from 'colormap';
 
+import './CapacitanceDisplay.css';
+
 class CapacitanceDisplay extends React.Component {
   constructor(props) {
     super(props);
@@ -50,8 +52,9 @@ class CapacitanceDisplay extends React.Component {
     } else {
       width = height * aspect_ratio;
     }
-    return <div>
+    return <div style={{display: "flex", flexDirection: "column"}}>
       <ElectrodeSvg 
+        svgId="capacitance-display-svg"
         layout={this.props.layout}
         width={width}
         height={height}
@@ -59,7 +62,6 @@ class CapacitanceDisplay extends React.Component {
         onMouseOver={this.onMouseOver}
         onMouseOut={this.onMouseOut}
       />
-      <br />
       <span>{this.state.message}</span>
     </div>;
   }
