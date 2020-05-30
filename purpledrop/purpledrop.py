@@ -27,6 +27,28 @@ def list_purpledrop_devices():
     devices = [x for x in devices if x.vid == 0x02dd and x.pid == 0x7da3]
     return devices
 
+def parameter_list():
+    """Return the config parameters for the embedded software
+
+    This should be configurable eventually. Or perhaps come from the device.
+    """
+    def make_param(id, name, description, type="int"):
+        if not isinstance(id, int) or type not in ["int", "float", "bool"]:
+            raise ValueError(f"Invalid param: {id}: {name} {type}")
+        return {
+                "id": id,
+                "name": name,
+                "description": description,
+                "type": type,
+            }
+
+    return [
+        #make_param(0, "Target Voltage", "High voltage regulator output in volts", "float"),
+        make_param(10, "HV Control Enabled", "Enable feedback control", "bool"),
+        make_param(11, "HV Voltage Setting", "High voltage regulator output in volts", "float"),
+        make_param(12, "HV Target Out", "V target out when regulator is disabled (counts, 0-4096)"),
+    ]
+
 class PurpleDropRxThread(object):
     def __init__(self, port: serial.Serial, callback: Callable[[PurpleDropMessage], None]=None):
         self._thread = threading.Thread(target=self.run, name="PurpleDrop Rx", daemon=True)
@@ -128,7 +150,8 @@ class PurpleDropDevice():
     def send_message(self, msg: PurpleDropMessage):
         tx_bytes = serialize(msg.to_bytes())
         print(f"Sending {tx_bytes} ")
-        self._ser.write(tx_bytes)
+        with self.lock:
+            self._ser.write(tx_bytes)
 
     def message_callback(self, msg: PurpleDropMessage):
         with self.lock:
@@ -157,8 +180,10 @@ class PurpleDropController(object):
         self.bulk_capacitance = []
         self.temperatures: Sequence[float] = []
         self.hv_supply_voltage = 0.0
+        self.parameter_list = parameter_list()
         self.lock = threading.Lock()
         self.event_listeners = []
+        self.active_capacitance_counter = 0
 
         def msg_filter(msg):
             desired_types = [
@@ -179,10 +204,15 @@ class PurpleDropController(object):
     def __message_callback(self, msg):
         if isinstance(msg, messages.ActiveCapacitanceMsg):
             self.active_capacitance = msg.measurement - msg.baseline
-            cap_event = messages_pb2.PurpleDropEvent()
-            cap_event.active_capacitance.measurement.capacitance = float(self.active_capacitance)
-            cap_event.active_capacitance.measurement.drop_present = False
-            self.__fire_event(cap_event)
+            self.active_capacitance_counter += 1
+            # Throttle the events. 500Hz messages is a lot for the browser to process.
+            # This also means logs don't have a full resolution, and it would be better
+            # if clients could choose what they get
+            if (self.active_capacitance_counter % 100) == 0:
+                cap_event = messages_pb2.PurpleDropEvent()
+                cap_event.active_capacitance.measurement.capacitance = float(self.active_capacitance)
+                cap_event.active_capacitance.measurement.drop_present = False
+                self.__fire_event(cap_event)
 
         elif isinstance(msg, messages.BulkCapacitanceMsg):
             if len(self.bulk_capacitance) < msg.start_index + msg.count:
@@ -213,15 +243,63 @@ class PurpleDropController(object):
             for listener in self.event_listeners:
                 listener(event)
 
+    def __get_parameter_definition(self, id):
+        for p in self.parameter_list:
+            if p['id'] == id:
+                return p
+        return None
+
     def register_event_listener(self, func):
         with self.lock:
             self.event_listeners.append(func)
+
+    def get_parameter_definitions(self):
+        """Get a list of all of the parameters supported by the PurpleDrop
+        """
+        return {
+            "parameters": self.parameter_list,
+        }
+
+    def get_parameter(self, paramIdx):
+        print(f"Requesting param {paramIdx}")
+        req_msg = messages.SetParameterMsg()
+        req_msg.set_param_idx(paramIdx)
+        req_msg.set_param_value_int(0)
+        req_msg.set_write_flag(0)
+        def msg_filter(msg):
+            return isinstance(msg, messages.SetParameterMsg) and msg.param_idx() == paramIdx
+        listener = self.purpledrop.get_sync_listener(msg_filter=msg_filter)
+        self.purpledrop.send_message(req_msg)
+        resp = listener.wait(timeout=0.5)
+        print (resp)
+        if resp is None:
+            raise TimeoutError("No response from purpledrop")
+        else:
+            paramDesc = self.__get_parameter_definition(paramIdx)
+            if paramDesc is not None and paramDesc['type'] == 'float':
+                print(f"Param value: {resp.param_value_float()}")
+                return resp.param_value_float()
+            else:
+                print(f"Param value: {resp.param_value_int()}")
+                return resp.param_value_int()
+
+    def set_parameter(self, paramIdx, value):
+        req_msg = messages.SetParameterMsg()
+        req_msg.set_param_idx(paramIdx)
+        paramDesc = self.__get_parameter_definition(paramIdx)
+        if paramDesc is not None and paramDesc['type'] == 'float':
+            req_msg.set_param_value_float(value)
+        else:
+            req_msg.set_param_value_int(value)
+        req_msg.set_write_flag(1)
+        self.purpledrop.send_message(req_msg)
 
     def get_board_definition(self):
         """Get electrode board configuratin object
 
         Arguments: None
         """
+        # TODO: This should be configurable
         return {
             "layout": {
                 "grid": [
@@ -450,12 +528,24 @@ class PurpleDropController(object):
 
 class PurpleDropRpc(object):
     """Wrapper to define the RPC methods for remote control of purpledrop
+
+    TODO: This is pretty verbose. Maybe a decorator to mark methods on
+    PurpleDropController for inclusion? Or just a list of method names.
     """
     def __init__(self, purple_drop_controller):
         self.pdc = purple_drop_controller
 
     def get_board_definition(self):
         return self.pdc.get_board_definition()
+
+    def get_parameter_definitions(self):
+        return self.pdc.get_parameter_definitions()
+
+    def get_parameter(self, id):
+        return self.pdc.get_parameter(id)
+
+    def set_parameter(self, id, value):
+        return self.pdc.set_parameter(id, value)
 
     def get_bulk_capacitance(self) -> List[float]:
         """Get the most recent capacitance scan results
@@ -481,6 +571,11 @@ class PurpleDropRpc(object):
             - pins: A list of pin numbers
         """
         return self.pdc.set_electrode_pins(pins)
+
+    def get_electrode_pins(self) -> Sequence[bool]:
+        """Get the state of all pins
+        """
+        return [False] * 128
 
     def move_drop(self,
                   start: Sequence[int],

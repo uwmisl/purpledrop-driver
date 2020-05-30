@@ -1,0 +1,20 @@
+.parameter-list form {
+  padding: 5px;
+}
+
+.parameter-list button {
+  margin-left: 15px;
+}
+
+.parameter-list .refreshButton {
+  margin-bottom: 15px;
+}
+
+.closeButton {
+  margin: 15px;
+  margin-left: 50px;
+}
+
+form.dirty label {
+  color: red;
+}

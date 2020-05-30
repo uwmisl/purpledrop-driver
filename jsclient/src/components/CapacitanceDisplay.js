@@ -10,33 +10,29 @@ class CapacitanceDisplay extends React.Component {
     super(props);
     this.onMouseOver = this.onMouseOver.bind(this);
     this.onMouseOut = this.onMouseOut.bind(this);
-    this.state = {message: "Temp"};
+    this.state = {mouseOverPin: null};
     this.colormap = colormap({
         colormap: 'jet',
-        nshades: 10,
+        nshades: 16,
         format: 'hex',
         alpha: 1.0,
     });
   }
 
   onMouseOver(pin) {
-    let capacitance = this.props.capacitance[pin];
-    let measurement = "NA";
-    if (capacitance) {
-      measurement = capacitance.capacitance;
-    }
-    this.setState({message: `Pin ${pin}: ${measurement}`});
+    this.setState({mouseOverPin: pin});
   }
+
   onMouseOut() {
-    this.setState({message: ""});
+    this.setState({mouseOverPin: null});
   }
 
   render() {
-    const NormMax = 3000;
+    const NormMax = 1500;
     let styleMap = {};
     for(var i=0; i<this.props.capacitance.length; i++) {
       let cap = this.props.capacitance[i];
-      if(cap.drop_present) {
+      if(cap.dropPresent && cap.capacitance > 75) {
         let colorIdx = Math.min(this.colormap.length-1, Math.floor(cap.capacitance * this.colormap.length / NormMax));
         styleMap[i] = {fill: this.colormap[colorIdx]};
       }
@@ -52,7 +48,17 @@ class CapacitanceDisplay extends React.Component {
     } else {
       width = height * aspect_ratio;
     }
-    return <div style={{display: "flex", flexDirection: "column"}}>
+    let message = "";
+    if(this.state.mouseOverPin) {
+      let capacitance = this.props.capacitance[this.state.mouseOverPin];
+      let measurement = "NA";
+      if (capacitance) {
+        measurement = capacitance.capacitance;
+      }
+      message = `Pin ${this.state.mouseOverPin}: ${measurement}`;
+    }
+    return <div style={{display: "flex", flexDirection: "column", alignContent: 'center', width: "100%"}}>
+      <h3 style={{textAlign:'center'}}>Capacitance</h3>
       <ElectrodeSvg 
         svgId="capacitance-display-svg"
         layout={this.props.layout}
@@ -62,13 +68,13 @@ class CapacitanceDisplay extends React.Component {
         onMouseOver={this.onMouseOver}
         onMouseOut={this.onMouseOut}
       />
-      <span>{this.state.message}</span>
+      <div style={{textAlign: 'center'}}><span>{message}</span></div>
     </div>;
   }
 }
 
 CapacitanceDisplay.propTypes = {
-  capacitance: PropTypes.arrayOf(PropTypes.exact({capacitance: PropTypes.number, drop_present: PropTypes.bool})).isRequired,
+  capacitance: PropTypes.arrayOf(PropTypes.exact({capacitance: PropTypes.number, dropPresent: PropTypes.bool})).isRequired,
   layout: PropTypes.object,
   height: PropTypes.number,
   width: PropTypes.number,

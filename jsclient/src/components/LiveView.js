@@ -16,6 +16,15 @@ class LiveView extends React.Component {
         this.onMouseOver = this.onMouseOver.bind(this);
         this.onMouseOut = this.onMouseOut.bind(this);
         this.onClick = this.onClick.bind(this);
+        this.onKeyDown = this.onKeyDown.bind(this);
+    }
+
+    componentDidMount() {
+        window.addEventListener('keydown', this.onKeyDown);
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener('keydown', this.onKeyDown);
     }
 
     decrementBrushSize() {
@@ -68,6 +77,60 @@ class LiveView extends React.Component {
             this.props.onSetElectrodes(active_pins);
         }
     }
+
+    onKeyDown(event) {
+        if (event.defaultPrevented) {
+            return; // Do nothing if the event was already processed
+        }
+
+        switch (event.key) {
+        case 'ArrowDown':
+            this.move(0, 1);
+            break;
+        case 'ArrowUp':
+            this.move(0, -1);
+            break;
+        case 'ArrowLeft':
+            this.move(-1, 0);
+            break;
+        case 'ArrowRight':
+            this.move(1, 0);
+            break;
+        case 'Escape':
+            this.props.onSetElectrodes([]);
+            break;
+        default:
+            return; // Quit when this doesn't handle the key event.
+        }
+
+        // Cancel the default action to avoid it being handled twice
+        event.preventDefault();
+    }
+
+    move(dx, dy) {
+        let activePins = [];
+        for(let i=0; i<this.props.electrodeState.length; i++) {
+            if(this.props.electrodeState[i]) {
+                activePins.push(i);
+            }
+        }
+        let newPins = [];
+        for(let i=0; i<activePins.length; i++) {
+            let pinLoc = this.props.layout.findPinLocation(activePins[i]);
+            let newLoc = [pinLoc[0] + dx, pinLoc[1] + dy];
+            let pin = this.props.layout.getPinAtPos(newLoc[0], newLoc[1]);
+            if(pin) {
+                newPins.push(pin);
+            } else {
+                // We ran off the regular grid, so we're going to refuse to move
+                // TODO: Could be nice to provide some indication that this happened
+                // instead of failing silently
+                return;
+            }
+        }
+        this.props.onSetElectrodes(newPins);
+    }
+
 
     render() {
         let classMap = {};

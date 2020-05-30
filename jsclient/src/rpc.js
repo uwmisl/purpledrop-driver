@@ -25,6 +25,15 @@ export function PdRpc() {
     getBoardDefinition() {
         return rpc.call('get_board_definition');
     },
+    getParameterDefinitions() {
+        return rpc.call('get_parameter_definitions');
+    },
+    getParameter(paramIdx) {
+        return rpc.call('get_parameter', [paramIdx]);
+    },
+    setParameter(paramIdx, value) {
+        return rpc.call('set_parameter', [paramIdx, value]);
+    },
     setElectrodePins(pins) {
         // Send a list of activated pin numbers, e.g. [4, 2, 100] will enable
         // electrode outputs 4, 2, and 100 while disabling all others.

@@ -60,13 +60,16 @@ def run_server(purpledrop: PurpleDropController, video_host=None):
         data = event.SerializeToString()
         with lock:
             for client in ws_server.clients.values():
-                client.ws.send(data)
+                try:
+                    client.ws.send(data)
+                except WebSocketError:
+                    pass
 
     def handle_video_update(image_event, transform_event):
         for event in [transform_event, image_event]:
             data = event.SerializeToString()
             with lock:
-                clients = ws_server.clients.values()
+                clients = list(ws_server.clients.values())
                 for client in clients:
                     try:
                         client.ws.send(data)
