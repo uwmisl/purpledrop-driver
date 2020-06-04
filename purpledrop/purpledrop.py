@@ -47,6 +47,12 @@ def parameter_list():
         make_param(10, "HV Control Enabled", "Enable feedback control", "bool"),
         make_param(11, "HV Voltage Setting", "High voltage regulator output in volts", "float"),
         make_param(12, "HV Target Out", "V target out when regulator is disabled (counts, 0-4096)"),
+        make_param(20, "Scan Sync Pin", "Set timing of the capacitance scan sync to given electrode"),
+        make_param(21, "Scan Start Delay", "ns, Settling time before first scan measurement"),
+        make_param(22, "Scan Blank Delay", "ns, Settling time after each scan measurement"),
+        make_param(23, "Sample Delay", "ns, Time between first and second integrator sample"),
+        make_param(24, "Blanking Delay", "ns, Time between blank and integrator reset for active measure"),
+        make_param(25, "Integrator Reset Delay", "ns, Time between reset release and first sample"),
     ]
 
 class PurpleDropRxThread(object):
