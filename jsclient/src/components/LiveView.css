@@ -29,7 +29,8 @@
 }
 
 .electrode.hover {
-    fill: black !important;
+    stroke: rgb(70, 57, 22) !important;
+    stroke-width: 7px;
 }
 
 
