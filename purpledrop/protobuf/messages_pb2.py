@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='protobuf',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x17protobuf/messages.proto\x12\x08protobuf\"+\n\tTimestamp\x12\x0f\n\x07seconds\x18\x01 \x01(\x03\x12\r\n\x05nanos\x18\x02 \x01(\x05\"I\n\x0f\x45lectrodeLayout\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x0e\n\x06layout\x18\x02 \x01(\t\"E\n\x08Settings\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x11\n\tfrequency\x18\x02 \x01(\x02\"L\n\x0e\x45lectrodeState\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x12\n\nelectrodes\x18\x02 \x03(\x08\"C\n\x16\x43\x61pacitanceMeasurement\x12\x13\n\x0b\x63\x61pacitance\x18\x01 \x01(\x02\x12\x14\n\x0c\x64rop_present\x18\x02 \x01(\x08\"q\n\x0f\x42ulkCapacitance\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x36\n\x0cmeasurements\x18\x02 \x03(\x0b\x32 .protobuf.CapacitanceMeasurement\"r\n\x11\x41\x63tiveCapacitance\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x35\n\x0bmeasurement\x18\x02 \x01(\x0b\x32 .protobuf.CapacitanceMeasurement\"C\n\x05Image\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x12\n\nimage_data\x18\x02 \x01(\x0c\"\x93\x02\n\x0eImageTransform\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x11\n\ttransform\x18\x02 \x03(\x02\x12\x39\n\x08qr_codes\x18\x03 \x03(\x0b\x32\'.protobuf.ImageTransform.QrCodeLocation\x12\x13\n\x0bimage_width\x18\x04 \x01(\x05\x12\x14\n\x0cimage_height\x18\x05 \x01(\x05\x1a\x1d\n\x05Point\x12\t\n\x01x\x18\x01 \x01(\x05\x12\t\n\x01y\x18\x02 \x01(\x05\x1a\x41\n\x0eQrCodeLocation\x12/\n\x07\x63orners\x18\x01 \x03(\x0b\x32\x1e.protobuf.ImageTransform.Point\"4\n\x0bHvRegulator\x12\x0f\n\x07voltage\x18\x01 \x01(\x02\x12\x14\n\x0cv_target_out\x18\x02 \x01(\x02\"\xa4\x03\n\x0fPurpleDropEvent\x12\x35\n\x10\x65lectrode_layout\x18\x01 \x01(\x0b\x32\x19.protobuf.ElectrodeLayoutH\x00\x12\x33\n\x0f\x65lectrode_state\x18\x02 \x01(\x0b\x32\x18.protobuf.ElectrodeStateH\x00\x12 \n\x05image\x18\x03 \x01(\x0b\x32\x0f.protobuf.ImageH\x00\x12\x33\n\x0fimage_transform\x18\x04 \x01(\x0b\x32\x18.protobuf.ImageTransformH\x00\x12&\n\x08settings\x18\x05 \x01(\x0b\x32\x12.protobuf.SettingsH\x00\x12\x35\n\x10\x62ulk_capacitance\x18\x06 \x01(\x0b\x32\x19.protobuf.BulkCapacitanceH\x00\x12\x39\n\x12\x61\x63tive_capacitance\x18\x07 \x01(\x0b\x32\x1b.protobuf.ActiveCapacitanceH\x00\x12-\n\x0chv_regulator\x18\x08 \x01(\x0b\x32\x15.protobuf.HvRegulatorH\x00\x42\x05\n\x03msgb\x06proto3')
+  serialized_pb=_b('\n\x17protobuf/messages.proto\x12\x08protobuf\"+\n\tTimestamp\x12\x0f\n\x07seconds\x18\x01 \x01(\x03\x12\r\n\x05nanos\x18\x02 \x01(\x05\"I\n\x0f\x45lectrodeLayout\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x0e\n\x06layout\x18\x02 \x01(\t\"E\n\x08Settings\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x11\n\tfrequency\x18\x02 \x01(\x02\"L\n\x0e\x45lectrodeState\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x12\n\nelectrodes\x18\x02 \x03(\x08\"C\n\x16\x43\x61pacitanceMeasurement\x12\x13\n\x0b\x63\x61pacitance\x18\x01 \x01(\x02\x12\x14\n\x0c\x64rop_present\x18\x02 \x01(\x08\"q\n\x0f\x42ulkCapacitance\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x36\n\x0cmeasurements\x18\x02 \x03(\x0b\x32 .protobuf.CapacitanceMeasurement\"r\n\x11\x41\x63tiveCapacitance\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x35\n\x0bmeasurement\x18\x02 \x01(\x0b\x32 .protobuf.CapacitanceMeasurement\"C\n\x05Image\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x12\n\nimage_data\x18\x02 \x01(\x0c\"\x93\x02\n\x0eImageTransform\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x11\n\ttransform\x18\x02 \x03(\x02\x12\x39\n\x08qr_codes\x18\x03 \x03(\x0b\x32\'.protobuf.ImageTransform.QrCodeLocation\x12\x13\n\x0bimage_width\x18\x04 \x01(\x05\x12\x14\n\x0cimage_height\x18\x05 \x01(\x05\x1a\x1d\n\x05Point\x12\t\n\x01x\x18\x01 \x01(\x05\x12\t\n\x01y\x18\x02 \x01(\x05\x1a\x41\n\x0eQrCodeLocation\x12/\n\x07\x63orners\x18\x01 \x03(\x0b\x32\x1e.protobuf.ImageTransform.Point\"4\n\x0bHvRegulator\x12\x0f\n\x07voltage\x18\x01 \x01(\x02\x12\x14\n\x0cv_target_out\x18\x02 \x01(\x02\"?\n\x12TemperatureControl\x12\x14\n\x0ctemperatures\x18\x01 \x03(\x02\x12\x13\n\x0b\x64uty_cycles\x18\x02 \x03(\x02\"\xe1\x03\n\x0fPurpleDropEvent\x12\x35\n\x10\x65lectrode_layout\x18\x01 \x01(\x0b\x32\x19.protobuf.ElectrodeLayoutH\x00\x12\x33\n\x0f\x65lectrode_state\x18\x02 \x01(\x0b\x32\x18.protobuf.ElectrodeStateH\x00\x12 \n\x05image\x18\x03 \x01(\x0b\x32\x0f.protobuf.ImageH\x00\x12\x33\n\x0fimage_transform\x18\x04 \x01(\x0b\x32\x18.protobuf.ImageTransformH\x00\x12&\n\x08settings\x18\x05 \x01(\x0b\x32\x12.protobuf.SettingsH\x00\x12\x35\n\x10\x62ulk_capacitance\x18\x06 \x01(\x0b\x32\x19.protobuf.BulkCapacitanceH\x00\x12\x39\n\x12\x61\x63tive_capacitance\x18\x07 \x01(\x0b\x32\x1b.protobuf.ActiveCapacitanceH\x00\x12-\n\x0chv_regulator\x18\x08 \x01(\x0b\x32\x15.protobuf.HvRegulatorH\x00\x12;\n\x13temperature_control\x18\t \x01(\x0b\x32\x1c.protobuf.TemperatureControlH\x00\x42\x05\n\x03msgb\x06proto3')
 )
 
 
@@ -493,6 +493,44 @@ _HVREGULATOR = _descriptor.Descriptor(
 )
 
 
+_TEMPERATURECONTROL = _descriptor.Descriptor(
+  name='TemperatureControl',
+  full_name='protobuf.TemperatureControl',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='temperatures', full_name='protobuf.TemperatureControl.temperatures', index=0,
+      number=1, type=2, cpp_type=6, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='duty_cycles', full_name='protobuf.TemperatureControl.duty_cycles', index=1,
+      number=2, type=2, cpp_type=6, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1007,
+  serialized_end=1070,
+)
+
+
 _PURPLEDROPEVENT = _descriptor.Descriptor(
   name='PurpleDropEvent',
   full_name='protobuf.PurpleDropEvent',
@@ -556,6 +594,13 @@ _PURPLEDROPEVENT = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='temperature_control', full_name='protobuf.PurpleDropEvent.temperature_control', index=8,
+      number=9, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -571,8 +616,8 @@ _PURPLEDROPEVENT = _descriptor.Descriptor(
       name='msg', full_name='protobuf.PurpleDropEvent.msg',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=1008,
-  serialized_end=1428,
+  serialized_start=1073,
+  serialized_end=1554,
 )
 
 _ELECTRODELAYOUT.fields_by_name['timestamp'].message_type = _TIMESTAMP
@@ -596,6 +641,7 @@ _PURPLEDROPEVENT.fields_by_name['settings'].message_type = _SETTINGS
 _PURPLEDROPEVENT.fields_by_name['bulk_capacitance'].message_type = _BULKCAPACITANCE
 _PURPLEDROPEVENT.fields_by_name['active_capacitance'].message_type = _ACTIVECAPACITANCE
 _PURPLEDROPEVENT.fields_by_name['hv_regulator'].message_type = _HVREGULATOR
+_PURPLEDROPEVENT.fields_by_name['temperature_control'].message_type = _TEMPERATURECONTROL
 _PURPLEDROPEVENT.oneofs_by_name['msg'].fields.append(
   _PURPLEDROPEVENT.fields_by_name['electrode_layout'])
 _PURPLEDROPEVENT.fields_by_name['electrode_layout'].containing_oneof = _PURPLEDROPEVENT.oneofs_by_name['msg']
@@ -620,6 +666,9 @@ _PURPLEDROPEVENT.fields_by_name['active_capacitance'].containing_oneof = _PURPLE
 _PURPLEDROPEVENT.oneofs_by_name['msg'].fields.append(
   _PURPLEDROPEVENT.fields_by_name['hv_regulator'])
 _PURPLEDROPEVENT.fields_by_name['hv_regulator'].containing_oneof = _PURPLEDROPEVENT.oneofs_by_name['msg']
+_PURPLEDROPEVENT.oneofs_by_name['msg'].fields.append(
+  _PURPLEDROPEVENT.fields_by_name['temperature_control'])
+_PURPLEDROPEVENT.fields_by_name['temperature_control'].containing_oneof = _PURPLEDROPEVENT.oneofs_by_name['msg']
 DESCRIPTOR.message_types_by_name['Timestamp'] = _TIMESTAMP
 DESCRIPTOR.message_types_by_name['ElectrodeLayout'] = _ELECTRODELAYOUT
 DESCRIPTOR.message_types_by_name['Settings'] = _SETTINGS
@@ -630,6 +679,7 @@ DESCRIPTOR.message_types_by_name['ActiveCapacitance'] = _ACTIVECAPACITANCE
 DESCRIPTOR.message_types_by_name['Image'] = _IMAGE
 DESCRIPTOR.message_types_by_name['ImageTransform'] = _IMAGETRANSFORM
 DESCRIPTOR.message_types_by_name['HvRegulator'] = _HVREGULATOR
+DESCRIPTOR.message_types_by_name['TemperatureControl'] = _TEMPERATURECONTROL
 DESCRIPTOR.message_types_by_name['PurpleDropEvent'] = _PURPLEDROPEVENT
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -718,6 +768,13 @@ HvRegulator = _reflection.GeneratedProtocolMessageType('HvRegulator', (_message.
   # @@protoc_insertion_point(class_scope:protobuf.HvRegulator)
   ))
 _sym_db.RegisterMessage(HvRegulator)
+
+TemperatureControl = _reflection.GeneratedProtocolMessageType('TemperatureControl', (_message.Message,), dict(
+  DESCRIPTOR = _TEMPERATURECONTROL,
+  __module__ = 'protobuf.messages_pb2'
+  # @@protoc_insertion_point(class_scope:protobuf.TemperatureControl)
+  ))
+_sym_db.RegisterMessage(TemperatureControl)
 
 PurpleDropEvent = _reflection.GeneratedProtocolMessageType('PurpleDropEvent', (_message.Message,), dict(
   DESCRIPTOR = _PURPLEDROPEVENT,

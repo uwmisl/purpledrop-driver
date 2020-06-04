@@ -65,6 +65,11 @@ message HvRegulator {
     float v_target_out = 2;
 }
 
+message TemperatureControl {
+    repeated float temperatures = 1;
+    repeated float duty_cycles = 2;
+}
+
 message PurpleDropEvent {
     oneof msg {
         ElectrodeLayout electrode_layout = 1;
@@ -75,5 +80,6 @@ message PurpleDropEvent {
         BulkCapacitance bulk_capacitance = 6;
         ActiveCapacitance active_capacitance = 7;
         HvRegulator hv_regulator = 8;
+        TemperatureControl temperature_control = 9;
     }
 }
