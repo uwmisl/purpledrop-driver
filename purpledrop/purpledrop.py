@@ -12,6 +12,7 @@ import purpledrop.messages as messages
 import purpledrop.protobuf.messages_pb2 as messages_pb2
 from .messages import PurpleDropMessage, ElectrodeEnableMsg, SetPwmMsg
 from .message_framer import MessageFramer, serialize
+from .move_drop import move_drop, MoveDropResult
 
 def resolve_msg_filter(filt):
     """If the filter provided is a message type, then create a filter which returns
@@ -164,20 +165,6 @@ class PurpleDropDevice():
             for l in self.listeners:
                 l.push_msg(msg)
 
-class MoveDropResult(dict):
-        def __init__(self, success=False, closed_loop=False, closed_loop_result=None):
-            dict.__init__(self, success=success, closed_loop=closed_loop, closed_loop_result=closed_loop_result)
-
-class MoveDropClosedLoopResult(object):
-    def __init__(self,
-                    pre_capacitance: float,
-                    post_capacitance: float,
-                    time_series: Sequence[float],
-                    capacitance_series: Sequence[float]):
-        self.pre_capacitance = pre_capacitance
-        self.post_capacitance = post_capacitance
-        self.time_series = time_series
-        self.capacitance_series = capacitance_series
 
 class PurpleDropController(object):
     def __init__(self, purpledrop):
@@ -185,11 +172,13 @@ class PurpleDropController(object):
         self.active_capacitance = 0.0
         self.bulk_capacitance = []
         self.temperatures: Sequence[float] = []
+        self.duty_cycles = {}
         self.hv_supply_voltage = 0.0
         self.parameter_list = parameter_list()
         self.lock = threading.Lock()
         self.event_listeners = []
         self.active_capacitance_counter = 0
+        self.hv_regulator_counter = 0
 
         def msg_filter(msg):
             desired_types = [
@@ -235,14 +224,23 @@ class PurpleDropController(object):
             self.__fire_event(bulk_event)
 
         elif isinstance(msg, messages.HvRegulatorMsg):
-            self.hv_supply_voltage = msg.voltage
-            event = messages_pb2.PurpleDropEvent()
-            event.hv_regulator.voltage = msg.voltage
-            event.hv_regulator.v_target_out = msg.v_target_out
-            self.__fire_event(event)
+            self.hv_regulator_counter += 1
+            if (self.hv_regulator_counter % 10) == 0:
+                self.hv_supply_voltage = msg.voltage
+                event = messages_pb2.PurpleDropEvent()
+                event.hv_regulator.voltage = msg.voltage
+                event.hv_regulator.v_target_out = msg.v_target_out
+                self.__fire_event(event)
 
         elif isinstance(msg, messages.TemperatureMsg):
             self.temperatures = [float(x) / 100.0 for x in msg.measurements]
+            event = messages_pb2.PurpleDropEvent()
+            event.temperature_control.temperatures[:] = self.temperatures
+            duty_cycles = []
+            for i in range(len(self.temperatures)):
+                duty_cycles.append(self.duty_cycles.get(i, 0.0))
+            event.temperature_control.duty_cycles[:] = duty_cycles
+            self.__fire_event(event)
 
     def __fire_event(self, event):
         with self.lock:
@@ -511,7 +509,7 @@ class PurpleDropController(object):
             - size: A list -- [width, height] -- specifying the size of the drop to be moved
             - direction: One of, "Up", "Down", "Left", "Right"
         """
-        return MoveDropResult()
+        return move_drop(self, start, size, direction)
 
     def get_temperatures(self) -> Sequence[float]:
         """Returns an array with all temperature sensor measurements in degrees C
@@ -525,6 +523,7 @@ class PurpleDropController(object):
             - chan: An integer specifying the channel to set
             - duty_cycle: Float specifying the duty cycle in range [0, 1.0]
         """
+        self.duty_cycles[chan] = duty_cycle
         msg = SetPwmMsg()
         msg.chan = chan
         msg.duty_cycle = duty_cycle
