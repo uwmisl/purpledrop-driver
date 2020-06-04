@@ -63,7 +63,7 @@ class MessageFramer(object):
             if msg is not None:
                 yield msg
 
-    def parse_byte(self, b: int) -> Optional[bytearray]:
+    def parse_byte(self, b: int) -> Optional[bytes]:
         """Parse a single new byte of data
 
         If the new byte completes a packet, the unserialized packet is returned.
