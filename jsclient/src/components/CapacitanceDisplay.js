@@ -32,7 +32,7 @@ class CapacitanceDisplay extends React.Component {
     let styleMap = {};
     for(var i=0; i<this.props.capacitance.length; i++) {
       let cap = this.props.capacitance[i];
-      if(cap.dropPresent && cap.capacitance > 75) {
+      if(cap.drop_present && cap.capacitance > 75) {
         let colorIdx = Math.min(this.colormap.length-1, Math.floor(cap.capacitance * this.colormap.length / NormMax));
         styleMap[i] = {fill: this.colormap[colorIdx]};
       }
@@ -74,7 +74,7 @@ class CapacitanceDisplay extends React.Component {
 }
 
 CapacitanceDisplay.propTypes = {
-  capacitance: PropTypes.arrayOf(PropTypes.exact({capacitance: PropTypes.number, dropPresent: PropTypes.bool})).isRequired,
+  capacitance: PropTypes.arrayOf(PropTypes.exact({capacitance: PropTypes.number, drop_present: PropTypes.bool})).isRequired,
   layout: PropTypes.object,
   height: PropTypes.number,
   width: PropTypes.number,

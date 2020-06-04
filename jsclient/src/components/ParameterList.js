@@ -22,7 +22,7 @@ class ParameterList extends React.Component {
           value={this.props.parameters[p.id]}
           onSave={this.props.onSave}
           onChange={this.props.onChange}
-        />  
+        />,
       );
     });
     return <div className="parameter-list">

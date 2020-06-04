@@ -23,22 +23,53 @@ import uwLogo from './images/uw-logo.png';
 
 Modal.setAppElement('#root');
 
+// Create a wrapper for the app with setState and setStatePassive
+// methods to ease up on the render calls. The event stream sends
+// a LOT of events (e.g. 100Hz, or 500Hz). We want to display some
+// of these, forcing that many react renderings can be pretty brutal.
+function setStateWrapper(component, minRenderPeriod_ms) {
+  let timeout = null;
+  let accumulatedState = {};
+
+  return {
+    setState(state) {
+      Object.assign(accumulatedState, state);
+      component.setState(accumulatedState);
+      accumulatedState = {};
+      if(timeout) {
+        clearTimeout(timeout);
+        timeout = null;
+      }
+    },
+    setStatePassive(state) {
+      // Don't set state now, just accumulate it, and set a timeout to make sure we eventually
+      // set it on the component. If a non-passive setState call happens in the meantime, that
+      // will flush it out sooner
+      Object.assign(accumulatedState, state);
+      if(!timeout) {
+        timeout = setTimeout(() => this.setState({}), minRenderPeriod_ms);
+      }
+    },
+  };
+}
+
 // Register an App instance and feed it state updates
 function hookup_remote_state(app) {
   let imageObjectUrl = null;
   let hvCounter = 0;
-  
-  function handle_event(event) {
 
+  let stateWrapper = setStateWrapper(app, 500);
+
+  function handle_event(event) {
     if (event.electrodeState) {
-      app.setState({
+      stateWrapper.setState({
         electrodeState: event.electrodeState.electrodes,
       });
     }
     else if(event.image) {
       const imageBlob = new Blob([event.image.imageData]);
       const newImageUrl = URL.createObjectURL(imageBlob);
-      app.setState({
+      stateWrapper.setState({
         image: newImageUrl,
         imageTimestamp: Date.now(),
       });
@@ -54,20 +85,20 @@ function hookup_remote_state(app) {
           [t[3], t[4], t[5]],
           [t[6], t[7], t[8]],
         ];
-      } 
-      app.setState({
+      }
+      stateWrapper.setStatePassive({
         imageTransform: newTransform,
         imageWidth: event.imageTransform.imageWidth,
         imageHeight: event.imageTransform.imageHeight,
       });
     } else if(event.bulkCapacitance) {
-      app.setState({
+      stateWrapper.setStatePassive({
         bulk_capacitance: event.bulkCapacitance.measurements,
       });
     } else if(event.hvRegulator) {
       hvCounter++;
       if((hvCounter % 100) == 0) {
-        app.setState({
+        stateWrapper.setStatePassive({
           voltage: event.hvRegulator.voltage,
           vTargetOut: event.hvRegulator.vTargetOut,
         });
@@ -125,7 +156,7 @@ function hookup_remote_state(app) {
           parameterDirtyMap: {},
         });
       });
-    }
+    },
   };
 }
 
@@ -148,7 +179,7 @@ class App extends React.Component {
   componentDidMount() {
     this.state_handle = hookup_remote_state(this);
   }
-  
+
   componentWillUnmount() {
     this.state_handle.disconnect();
   }
@@ -173,7 +204,7 @@ class App extends React.Component {
   }
 
   onParameterSave(id) {
-    this.state_handle.setParameter(id, this.state.parameters[id])
+    this.state_handle.setParameter(id, this.state.parameters[id]);
     let dirtyMap = this.state.parameterDirtyMap;
     dirtyMap[id] = false;
     this.setState({parameterDirtyMap: dirtyMap});
@@ -223,31 +254,31 @@ class App extends React.Component {
               <CapacitanceDisplay capacitance={this.state.bulk_capacitance} layout={this.state.layout} width={400} height={250} />
             </Route>
             <Route path="/liveview_test">
-              <LiveView 
-                image={this.state.image} 
+              <LiveView
+                image={this.state.image}
                 transform={this.state.imageTransform}
                 electrodeState={this.state.electrodeState}
                 layout={this.state.layout}
                 imageWidth={this.state.imageWidth}
                 imageHeight={this.state.imageHeight}
-                width={400} 
-                height={250} 
+                width={400}
+                height={250}
                 onSetElectrodes={(pins) => {this.state.pdrpc.setElectrodePins(pins);}}
               />
             </Route>
             <Route path="/">
-              <Modal 
+              <Modal
                 isOpen={this.state.paramModalOpen}
                 onRequestClose={this.closeParamModal}
                 contentLabel="Device Parameters"
                 style={paramModalStyles}>
                   <h1>Purple Drop Configuration Parameters</h1>
                   <div style={{padding: '5px'}}>
-                    <ParameterList 
+                    <ParameterList
                       onChange={this.onParameterChange}
                       onSave={this.onParameterSave}
                       onRefresh={this.state_handle.refreshParameters}
-                      parameterList={this.state.parameterList} 
+                      parameterList={this.state.parameterList}
                       parameters={this.state.parameters}
                       parameterDirtyMap={this.state.parameterDirtyMap}
                     />
@@ -278,8 +309,8 @@ class App extends React.Component {
                   </div>
                 </div>
                 <ResizableBox className="box" minConstraints={[250, 250]} width={600} height={525} lockAspectRatio={true}>
-                  <LiveView 
-                    image={this.state.image} 
+                  <LiveView
+                    image={this.state.image}
                     transform={this.state.imageTransform}
                     electrodeState={this.state.electrodeState}
                     layout={this.state.layout}
