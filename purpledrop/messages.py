@@ -90,6 +90,9 @@ class CommandAckMsg(PurpleDropMessage):
             raise ValueError("Require at least 2 bytes to parse a CommandAckMsg")
         self.acked_id = buf[1]
 
+    def __str__(self):
+        return f"CommandAckMsg(acked_id={self.acked_id})"
+
 class ElectrodeEnableMsg(PurpleDropMessage):
     ID = 0
 
