@@ -29,6 +29,9 @@ class PurpleDropMessage(object):
         # is proper.
         return msg_class(buf)
 
+    def to_bytes(self) -> bytes:
+        raise RuntimeError("Abstract method called")
+
 class ActiveCapacitanceMsg(PurpleDropMessage):
     ID = 3
 
@@ -45,6 +48,9 @@ class ActiveCapacitanceMsg(PurpleDropMessage):
 
     def fill(self, fill_data):
         self.baseline, self.measurement = struct.unpack_from("<HH", fill_data, 1)
+
+    def __str__(self):
+        return f"ActiveCapacitanceMsg(baseline={self.baseline}, measurement={self.measurement})"
 
 class BulkCapacitanceMsg(PurpleDropMessage):
     ID = 2
@@ -92,6 +98,44 @@ class CommandAckMsg(PurpleDropMessage):
 
     def __str__(self):
         return f"CommandAckMsg(acked_id={self.acked_id})"
+
+class DataBlobMsg(PurpleDropMessage):
+    ID = 10
+
+    # Types of blob data that can be requested
+    SOFTWARE_VERSION_ID = 0
+
+    def __init__(self, fill_data: Optional[bytes]=None):
+        if fill_data is not None:
+            self.fill(fill_data)
+        else:
+            self.blob_id = 0
+            self.chunk_index = 0
+            self.payload_size = 0
+            self.payload = bytes([])
+
+    @staticmethod
+    def predictSize(buf: bytes) -> int:
+        if len(buf) < 3:
+            return 0
+        else:
+            return buf[2] + 5
+
+    def fill(self, fill_data: bytes):
+        if len(fill_data) < 5:
+            raise ValueError("Need at least 5 bytes for a DataBlobMsg")
+        self.blob_id = fill_data[1]
+        self.payload_size = fill_data[2]
+        self.chunk_index = struct.unpack_from("<H", fill_data, 3)[0]
+        if len(fill_data) < 5 + self.payload_size:
+            print(f"Insufficient data for DataBlobMsg. "\
+            "payload_size={self.payload_size}, only {len(fill_data)} bytes")
+        self.payload = fill_data[5:5+self.payload_size]
+
+    def to_bytes(self) -> bytes:
+        ret = struct.pack("<BBBH", self.ID, self.blob_id, self.payload_size, self.chunk_index)
+        ret += self.payload
+        return ret
 
 class ElectrodeEnableMsg(PurpleDropMessage):
     ID = 0
@@ -205,7 +249,7 @@ class TemperatureMsg(PurpleDropMessage):
 
     def to_bytes(self) -> bytes:
         count = len(self.measurements)
-        return struct.pack("<BB"+"h"*count, [self.ID, count] + self.measurements)
+        return struct.pack("<BB"+"h"*count, [self.ID, count] + list(self.measurements))
 
     def __str__(self):
         return "TemperatureMsg(measurements=%s)" % str(self.measurements)
