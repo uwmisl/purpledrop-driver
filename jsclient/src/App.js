@@ -103,6 +103,8 @@ function hookup_remote_state(app) {
           vTargetOut: event.hvRegulator.vTargetOut,
         });
       }
+    } else if(event.temperatureControl) {
+      stateWrapper.setStatePassive({temperatures: event.temperatureControl.temperatures});
     }
   }
 
@@ -323,7 +325,7 @@ class App extends React.Component {
                   <CapacitanceDisplay capacitance={this.state.bulk_capacitance} layout={this.state.layout} width={400} height={400} />
                 </ResizableBox>
                 <ResizableBox className="box" minConstraints={[150, 150]} width={400} height={300} lockAspectRatio={true}>
-                  <Stats voltage={this.state.voltage} />
+                  <Stats voltage={this.state.voltage} temperatures={this.state.temperatures} />
                 </ResizableBox>
               </div>;
             </Route>
