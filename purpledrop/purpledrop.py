@@ -77,7 +77,6 @@ class PurpleDropRxThread(object):
                          # shouldn't be able to happen; I'm not so sure but it
                          # needs investigation
                          # See serial/serialposix.py:500
-
             if(len(rxBytes) > 0):
                 for buf in self._framer.parse(rxBytes):
                     if(self._callback):
@@ -156,7 +155,6 @@ class PurpleDropDevice():
 
     def send_message(self, msg: PurpleDropMessage):
         tx_bytes = serialize(msg.to_bytes())
-        print(f"Sending {tx_bytes} ")
         with self.lock:
             self._ser.write(tx_bytes)
 
@@ -203,7 +201,7 @@ class PurpleDropController(object):
             # Throttle the events. 500Hz messages is a lot for the browser to process.
             # This also means logs don't have a full resolution, and it would be better
             # if clients could choose what they get
-            if (self.active_capacitance_counter % 100) == 0:
+            if (self.active_capacitance_counter % 50) == 0:
                 cap_event = messages_pb2.PurpleDropEvent()
                 cap_event.active_capacitance.measurement.capacitance = float(self.active_capacitance)
                 cap_event.active_capacitance.measurement.drop_present = False
