@@ -15,7 +15,7 @@ for variable length messages).
 """
 from typing import Callable, Iterator, Optional, Tuple
 
-def calc_checksum(data: bytearray) -> Tuple[int, int]:
+def calc_checksum(data: bytes) -> Tuple[int, int]:
     a = 0
     b = 0
     for x in data:
@@ -24,7 +24,7 @@ def calc_checksum(data: bytearray) -> Tuple[int, int]:
 
     return (a, b)
 
-def serialize(input: bytearray) -> bytearray:
+def serialize(input: bytes) -> bytes:
     """Convert a message into a framed message ready to be sent with packet 
     start, control code escaping, and checksum.
     """
@@ -39,18 +39,18 @@ def serialize(input: bytearray) -> bytearray:
     
     out.append(chk_a)
     out.append(chk_b)
-    return bytearray(out)
+    return bytes(out)
 
 class MessageFramer(object):
     """Class for framing an incoming stream of bytes into messages
     """
-    def __init__(self, size_predictor: Callable[[bytearray], int]):
+    def __init__(self, size_predictor: Callable[[bytes], int]):
         self._buffer = b""
         self._size_predictor = size_predictor
         self._escaping = False
         self._parsing = False
 
-    def parse(self, bytes: bytearray) -> Iterator[bytearray]:
+    def parse(self, bytes: bytearray) -> Iterator[bytes]:
         """Parse an array of bytes, and yield any messages completed
 
         Example:
@@ -89,6 +89,7 @@ class MessageFramer(object):
 
         expected_size = self._size_predictor(self._buffer)
         if expected_size == -1:
+            print("Got invalid message size")
             # Not a valid message
             self.reset()
         elif expected_size > 0 and len(self._buffer) >= expected_size + 2:
@@ -98,6 +99,8 @@ class MessageFramer(object):
                 self.reset()
                 return msg_without_checksum
             else:
+                print(f"Checksum mismatch (id: {self._buffer[0]})")
+                print(f"buf: {[hex(a) for a in self._buffer]}")
                 self.reset()
         
         return None
