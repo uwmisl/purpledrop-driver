@@ -13,7 +13,7 @@ function rotate(center, points, angle) {
 class Layout {
   constructor(layout) {
     this.grid = layout.grid;
-    this.extra = layout.extra;
+    this.peripherals = layout.peripherals;
     this.memoized_polygons = null;
   }
 
@@ -40,7 +40,7 @@ class Layout {
         });
       });
 
-      this.extra.forEach((group) => {
+      this.peripherals.forEach((group) => {
         let group_origin = group.origin;
         group.electrodes.forEach((electrode) => {
           let electrode_origin = [group_origin[0] + electrode.origin[0], group_origin[1] + electrode.origin[1]];
