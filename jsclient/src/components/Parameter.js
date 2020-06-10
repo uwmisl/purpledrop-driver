@@ -5,7 +5,7 @@ import NumericInput from 'react-numeric-input';
 class Parameter extends React.Component {
   constructor(props) { 
     super(props);
-
+    this.state = {message: ""};
     this.onSave = this.onSave.bind(this);
     this.updateLocalValue = this.updateLocalValue.bind(this);
   }
@@ -13,7 +13,16 @@ class Parameter extends React.Component {
   onSave() {
     console.log("Saving param ", this.props.id, " = ", this.props.value);
     if(this.props.onSave) {
-      this.props.onSave(this.props.id);
+      this.setState({message: "Saving..."});
+      this.props.onSave(this.props.id).then(
+        () => {
+          this.setState({message: "Saved"});
+          setTimeout(() => {this.setState({message: ""})}, 2000);
+        }, 
+        () => {
+          this.setState({message: "Failed"});
+        }
+      )
     }
   }
 
@@ -40,6 +49,7 @@ class Parameter extends React.Component {
         {this.props.name} {input}
       </label>
       <button type="submit">Save</button>
+      <span>{this.state.message}</span>
     </form>;
   }
 }

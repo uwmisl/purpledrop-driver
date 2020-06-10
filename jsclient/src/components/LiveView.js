@@ -143,8 +143,16 @@ class LiveView extends React.Component {
                 classMap[i] += " active";
             }
         }
-        return <div style={{display: 'flex', flexDirection: 'column'}}>
-            <div className='electrode-grid-wrapper'>
+        // Adjust width/height based on whether an image is present. 
+        // Couldn't find a CSS only solution to keep the SVG/IMG tag the same size when image was there,
+        // but also allow the SVG to grow when no image was there, so conditionally changing the style 
+        // to work around.
+        let wrapperStyles = {};
+        if(!this.props.image) {
+            wrapperStyles = {width: '100%', height: '100%'}
+        }
+        return <div style={{width: '100%', display: 'flex', flexDirection: 'column'}}>
+            <div className='electrode-grid-wrapper' style={wrapperStyles}>
                 <img className='electrode-grid-img' src={this.props.image || ''} />
                 <ElectrodeSvg
                     svgId="electrode-grid-svg"

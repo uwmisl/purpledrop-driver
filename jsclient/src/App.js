@@ -149,7 +149,7 @@ function hookup_remote_state(app) {
       return pdrpc.setParameter(id, value);
     },
     refreshParameters() {
-      pdrpc.getParameterDefinitions().then((resp) => {
+      return pdrpc.getParameterDefinitions().then((resp) => {
         app.setState({
           parameterList: resp.parameters,
         });
@@ -165,6 +165,9 @@ function hookup_remote_state(app) {
           parameterDirtyMap: {},
         });
       });
+    },
+    saveParameters() {
+      return pdrpc.setParameter(0xFFFFFFFF, 1);
     },
   };
 }
@@ -213,14 +216,14 @@ class App extends React.Component {
   }
 
   onParameterSave(id) {
-    this.state_handle.setParameter(id, this.state.parameters[id]);
     let dirtyMap = this.state.parameterDirtyMap;
     dirtyMap[id] = false;
     this.setState({parameterDirtyMap: dirtyMap});
+    return this.state_handle.setParameter(id, this.state.parameters[id]);
   }
 
   onParameterRefresh() {
-    this.state_handle.refreshParameters();
+    return this.state_handle.refreshParameters();
   }
 
   render() {
@@ -287,6 +290,7 @@ class App extends React.Component {
                       onChange={this.onParameterChange}
                       onSave={this.onParameterSave}
                       onRefresh={this.state_handle.refreshParameters}
+                      onPersist={this.state_handle.saveParameters}
                       parameterList={this.state.parameterList}
                       parameters={this.state.parameters}
                       parameterDirtyMap={this.state.parameterDirtyMap}

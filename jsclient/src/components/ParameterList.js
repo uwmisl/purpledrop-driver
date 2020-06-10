@@ -6,6 +6,25 @@ import './ParameterList.css';
 class ParameterList extends React.Component {
   constructor(props) {
     super(props);
+    this.onSaveToFlash = this.onSaveToFlash.bind(this);
+    this.onRefresh = this.onRefresh.bind(this);
+    this.state = {alertMessage: "", error: false};
+  }
+
+  onSaveToFlash() {
+    this.setState({alertMessage: "Saving...", error: false});
+    this.props.onPersist().then(
+      () => { this.setState({alertMessage: "Saved"}); },
+      (e) => { this.setState({error: true, alertMessage: e.message}); },
+    );
+  }
+
+  onRefresh() {
+    this.setState({alertMessage: "Reading parmeters...", error: false});
+    this.props.onRefresh().then(
+      () => { this.setState({alertMessage: "Refresh complete"}); },
+      (e) => { this.setState({error: true, alertMessage: e.message}); },
+    );
   }
 
   render() {
@@ -26,7 +45,9 @@ class ParameterList extends React.Component {
       );
     });
     return <div className="parameter-list">
-      <button className="refreshButton" onClick={this.props.onRefresh}>Refresh from Device</button>
+      <button className="refreshButton" onClick={this.onRefresh}>Refresh from Device</button>
+      <button className="saveButton" onClick={this.onSaveToFlash}>Save to Flash</button>
+      <div className="parameterAlert"><span className={this.state.error ? "error" : ""}>{this.state.alertMessage}</span></div>
       {params}
     </div>;
   }
@@ -44,6 +65,7 @@ ParameterList.propTypes = {
   onRefresh: PropTypes.func,
   onSave: PropTypes.func,
   onChange: PropTypes.func,
+  onPersist: PropTypes.func,
 };
 
 export default ParameterList;

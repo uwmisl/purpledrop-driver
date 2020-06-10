@@ -10,6 +10,10 @@
   margin-bottom: 15px;
 }
 
+.parameter-list span.error {
+  color: red;
+}
+
 .closeButton {
   margin: 15px;
   margin-left: 50px;
