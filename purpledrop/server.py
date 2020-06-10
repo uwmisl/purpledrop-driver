@@ -16,7 +16,7 @@ from geventwebsocket.exceptions import WebSocketError
 from flask import Flask
 from jsonrpc.backend.flask import api
 
-from .purpledrop import PurpleDropController, PurpleDropRpc
+from .purpledrop import PurpleDropController
 from .video_client import VideoClientProtobuf
 
 class Config(object):
@@ -44,10 +44,9 @@ def run_server(purpledrop: PurpleDropController, video_host=None):
     flask_app.add_url_rule(
         '/rpc/map', view_func=api.jsonrpc_map, methods=['GET'])
 
-    pdrpc = PurpleDropRpc(purpledrop)
-
-    # Register all public methods of pdrpc as RPC calls
-    api.dispatcher.build_method_map(pdrpc)
+    # Register RPC methods 
+    for method_name in purpledrop.RPC_METHODS:
+        api.dispatcher.add_method(getattr(purpledrop, method_name))
 
     http_server = WSGIServer(('', 7000), flask_app)
     http_server.start()

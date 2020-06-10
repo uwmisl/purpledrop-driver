@@ -31,7 +31,7 @@ def list_purpledrop_devices():
 def parameter_list():
     """Return the config parameters for the embedded software
 
-    This should be configurable eventually. Or perhaps come from the device.
+    This should be configurable eventually. Or better yet come from the device.
     """
     def make_param(id, name, description, type="int"):
         if not isinstance(id, int) or type not in ["int", "float", "bool"]:
@@ -44,10 +44,9 @@ def parameter_list():
             }
 
     return [
-        #make_param(0, "Target Voltage", "High voltage regulator output in volts", "float"),
         make_param(10, "HV Control Enabled", "Enable feedback control", "bool"),
-        make_param(11, "HV Voltage Setting", "High voltage regulator output in volts", "float"),
-        make_param(12, "HV Target Out", "V target out when regulator is disabled (counts, 0-4096)"),
+        make_param(11, "HV Voltage Setting", "High voltage regulator output setting in volts", "float"),
+        make_param(12, "HV Target Out", "V target out when regulator is disabled (counts, 0-4095)"),
         make_param(20, "Scan Sync Pin", "Set timing of the capacitance scan sync to given electrode"),
         make_param(21, "Scan Start Delay", "ns, Settling time before first scan measurement"),
         make_param(22, "Scan Blank Delay", "ns, Settling time after each scan measurement"),
@@ -165,6 +164,22 @@ class PurpleDropDevice():
 
 
 class PurpleDropController(object):
+    # Define the method names which will be made available via RPC server
+    RPC_METHODS = [
+        'get_board_definition',
+        'get_parameter_definitions',
+        'get_parameter',
+        'set_parameter',
+        'get_bulk_capacitance',
+        'get_active_capacitance',
+        'set_electrode_pins',
+        'get_electrode_pins',
+        'move_drop',
+        'get_temperatures',
+        'set_pwm_duty_cycle',
+        'get_hv_supply_voltage',
+    ]
+
     def __init__(self, purpledrop):
         self.purpledrop = purpledrop
         self.active_capacitance = 0.0
@@ -177,6 +192,7 @@ class PurpleDropController(object):
         self.event_listeners = []
         self.active_capacitance_counter = 0
         self.hv_regulator_counter = 0
+        self.pin_state = [False] * 128
 
         def msg_filter(msg):
             desired_types = [
@@ -252,18 +268,28 @@ class PurpleDropController(object):
         return None
 
     def register_event_listener(self, func):
+        """Register a callback for state update events
+        """
         with self.lock:
             self.event_listeners.append(func)
 
     def get_parameter_definitions(self):
         """Get a list of all of the parameters supported by the PurpleDrop
+
+        Arguments:
+          - None
         """
         return {
             "parameters": self.parameter_list,
         }
 
     def get_parameter(self, paramIdx):
-        print(f"Requesting param {paramIdx}")
+        """Request the current value of a parameter from the device
+
+        Arguments:
+          - paramIdx: The ID of the parameter to request (from the list of
+            parameters provided by 'get_parameter_definition')
+        """
         req_msg = messages.SetParameterMsg()
         req_msg.set_param_idx(paramIdx)
         req_msg.set_param_value_int(0)
@@ -273,7 +299,6 @@ class PurpleDropController(object):
         listener = self.purpledrop.get_sync_listener(msg_filter=msg_filter)
         self.purpledrop.send_message(req_msg)
         resp = listener.wait(timeout=0.5)
-        print (resp)
         if resp is None:
             raise TimeoutError("No response from purpledrop")
         else:
@@ -286,6 +311,17 @@ class PurpleDropController(object):
                 return resp.param_value_int()
 
     def set_parameter(self, paramIdx, value):
+        """Set a config parameter
+
+        A special paramIdx value of 0xFFFFFFFF is used to trigger the saving
+        of all parameters to flash.
+
+        Arguments:
+            - paramIdx: The index of the parameter to set (from
+             'get_parameter_definitions')
+            - value: A float or int (based on the definition) with the new
+              value to assign
+        """
         req_msg = messages.SetParameterMsg()
         req_msg.set_param_idx(paramIdx)
         paramDesc = self.__get_parameter_definition(paramIdx)
@@ -301,7 +337,7 @@ class PurpleDropController(object):
         resp = listener.wait(timeout=0.5)
         if resp is None:
             raise TimeoutError(f"No response from purpledrop to set parameter ({paramIdx})")
-        
+
 
     def get_board_definition(self):
         """Get electrode board configuratin object
@@ -489,6 +525,15 @@ class PurpleDropController(object):
         """
         return self.active_capacitance
 
+    def get_electrode_pins(self):
+        """Get the current state of all electrodes
+
+        Arguments: None
+
+        Returns: List of booleans
+        """
+        return self.pin_state
+
     def set_electrode_pins(self, pins: Sequence[int]):
         """Set the currently enabled pins
 
@@ -496,17 +541,19 @@ class PurpleDropController(object):
         Providing an empty array will deactivate all electrodes.
 
         Arguments:
-            - pins: A list of pin numbers
+            - pins: A list of pin numbers to activate
         """
-
         msg = ElectrodeEnableMsg()
         event = messages_pb2.PurpleDropEvent()
-        event.electrode_state.electrodes[:] = [False] * 128
+        self.pin_state = [False] * 128
+
         for p in pins:
             word = int(p / 8)
             bit = p % 8
             msg.values[word] |= (1<<bit)
-            event.electrode_state.electrodes[p] = True
+            self.pin_state[p] = True
+
+        event.electrode_state.electrodes[:] = self.pin_state
         self.purpledrop.send_message(msg)
         self.__fire_event(event)
 
@@ -524,7 +571,9 @@ class PurpleDropController(object):
         return move_drop(self, start, size, direction)
 
     def get_temperatures(self) -> Sequence[float]:
-        """Returns an array with all temperature sensor measurements in degrees C
+        """Returns an array of all temperature sensor measurements in degrees C
+
+        Arguments: None
         """
         return self.temperatures
 
@@ -533,7 +582,7 @@ class PurpleDropController(object):
 
         Arguments:
             - chan: An integer specifying the channel to set
-            - duty_cycle: Float specifying the duty cycle in range [0, 1.0]
+            - duty_cycle: A float specifying the duty cycle in range [0, 1.0]
         """
         self.duty_cycles[chan] = duty_cycle
         msg = SetPwmMsg()
@@ -542,85 +591,11 @@ class PurpleDropController(object):
         self.purpledrop.send_message(msg)
 
     def get_hv_supply_voltage(self):
+        """Return the latest high voltage rail measurement
+
+        Arguments: None
+
+        Returns: A float, in volts
+        """
         return self.hv_supply_voltage
 
-class PurpleDropRpc(object):
-    """Wrapper to define the RPC methods for remote control of purpledrop
-
-    TODO: This is pretty verbose. Maybe a decorator to mark methods on
-    PurpleDropController for inclusion? Or just a list of method names.
-    """
-    def __init__(self, purple_drop_controller):
-        self.pdc = purple_drop_controller
-
-    def get_board_definition(self):
-        return self.pdc.get_board_definition()
-
-    def get_parameter_definitions(self):
-        return self.pdc.get_parameter_definitions()
-
-    def get_parameter(self, id):
-        return self.pdc.get_parameter(id)
-
-    def set_parameter(self, id, value):
-        return self.pdc.set_parameter(id, value)
-
-    def get_bulk_capacitance(self) -> List[float]:
-        """Get the most recent capacitance scan results
-
-        Arguments: None
-        """
-        return self.pdc.get_bulk_capacitance()
-
-    def get_active_capacitance(self) -> float:
-        """Get the most recent active electrode capacitance
-
-        Arguments: None
-        """
-        return self.pdc.get_active_capacitance()
-
-    def set_electrode_pins(self, pins: Sequence[int]):
-        """Set the currently enabled pins
-
-        Specified electrodes will be activated, all other will be deactivated.
-        Providing an empty array will deactivate all electrodes.
-
-        Arguments:
-            - pins: A list of pin numbers
-        """
-        return self.pdc.set_electrode_pins(pins)
-
-    def get_electrode_pins(self) -> Sequence[bool]:
-        """Get the state of all pins
-        """
-        return [False] * 128
-
-    def move_drop(self,
-                  start: Sequence[int],
-                  size: Sequence[int],
-                  direction: str) -> MoveDropResult:
-        """Execute a drop move sequence
-
-        Arguments:
-            - start: A list -- [x, y] -- specifying the top-left corner of the current drop location
-            - size: A list -- [width, height] -- specifying the size of the drop to be moved
-            - direction: One of, "Up", "Down", "Left", "Right"
-        """
-        return self.pdc.move_drop(start, size, direction)
-
-    def get_temperatures(self) -> Sequence[float]:
-        """Returns an array with all temperature sensor measurements in degrees C
-        """
-        return self.pdc.get_temperatures()
-
-    def set_pwm_duty_cycle(self, chan: int, duty_cycle: float):
-        """Set the PWM output duty cycle for a single channel
-
-        Arguments:
-            - chan: An integer specifying the channel to set
-            - duty_cycle: Float specifying the duty cycle in range [0, 1.0]
-        """
-        return self.pdc.set_pwm_duty_cycle(chan, duty_cycle)
-
-    def get_hv_supply_voltage(self) -> float:
-        return self.pdc.get_hv_supply_voltage()
