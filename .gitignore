@@ -5,6 +5,12 @@
 
 .DS_Store
 
+# Python files
 *.egg-info
 *.pyc
 .mypy_cache
+build
+dist
+
+# JS files
+yarn-error.log
