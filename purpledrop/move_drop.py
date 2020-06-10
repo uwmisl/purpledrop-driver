@@ -117,8 +117,7 @@ def move_drop(purpledrop, start, size, direction):
     pins = [layout.grid_location_to_pin(loc[0], loc[1]) for loc in initial_rect.grid_locations()]
     if None in pins:
         raise ValueError("Invalid move coordinates")
-
-    
+    set_pins(pins)
 
     msg = wait_for(messages.ActiveCapacitanceMsg, 2.0)
     if msg is None:
@@ -128,11 +127,8 @@ def move_drop(purpledrop, start, size, direction):
 
     pins = [layout.grid_location_to_pin(loc[0], loc[1]) for loc in final_rect.grid_locations()]
     if None in pins:
-        raise ValuError("Invalid move destination")
-    purpledrop.set_electrode_pins(pins)
-    msg = wait_for(messages.CommandAckMsg, 2.0)
-    if msg is None:
-        raise RuntimeError("Timed out waiting for second electrode command ACK")
+        raise ValueError("Invalid move destination")
+    set_pins(pins)
 
     MOVE_THRESHOLD = 0.8 * pre_capacitance
     MOVE_TIMEOUT = 5.0
