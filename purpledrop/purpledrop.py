@@ -294,7 +294,14 @@ class PurpleDropController(object):
         else:
             req_msg.set_param_value_int(value)
         req_msg.set_write_flag(1)
+        def msg_filter(msg):
+            return isinstance(msg, messages.SetParameterMsg) and msg.param_idx() == paramIdx
+        listener = self.purpledrop.get_sync_listener(msg_filter=msg_filter)
         self.purpledrop.send_message(req_msg)
+        resp = listener.wait(timeout=0.5)
+        if resp is None:
+            raise TimeoutError(f"No response from purpledrop to set parameter ({paramIdx})")
+        
 
     def get_board_definition(self):
         """Get electrode board configuratin object
