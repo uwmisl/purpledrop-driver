@@ -57,6 +57,7 @@ function setStateWrapper(component, minRenderPeriod_ms) {
 function hookup_remote_state(app) {
   let imageObjectUrl = null;
   let hvCounter = 0;
+  let imageTimeout = null;
 
   let stateWrapper = setStateWrapper(app, 500);
 
@@ -71,8 +72,14 @@ function hookup_remote_state(app) {
       const newImageUrl = URL.createObjectURL(imageBlob);
       stateWrapper.setState({
         image: newImageUrl,
-        imageTimestamp: Date.now(),
       });
+      // Clear any existing timeout, and set a new one
+      clearTimeout(imageTimeout);
+      imageTimeout = setTimeout(() => {
+        stateWrapper.setState({
+          image: "",
+        });
+      }, 3000);
       // Free the previous frame from store
       URL.revokeObjectURL(imageObjectUrl);
       imageObjectUrl = newImageUrl;
