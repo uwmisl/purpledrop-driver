@@ -3,7 +3,7 @@ from typing import Optional, Sequence, Type
 
 class PurpleDropMessage(object):
     @classmethod
-    def predictSize(cls, buf: bytearray) -> int:
+    def predictSize(cls, buf: bytes) -> int:
         if len(buf) == 0:
             return 0
         msg_class = cls.findClassById(buf[0])
@@ -19,7 +19,7 @@ class PurpleDropMessage(object):
         return None
 
     @classmethod
-    def from_bytes(cls, buf: bytearray) -> object:
+    def from_bytes(cls, buf: bytes) -> object:
         if len(buf) == 0:
             return None
         msg_class = cls.findClassById(buf[0])
@@ -35,7 +35,7 @@ class PurpleDropMessage(object):
 class ActiveCapacitanceMsg(PurpleDropMessage):
     ID = 3
 
-    def __init__(self, fill_data: Optional[bytearray]=None):
+    def __init__(self, fill_data: Optional[bytes]=None):
         if fill_data is not None:
             self.fill(fill_data)
         else:
@@ -43,7 +43,7 @@ class ActiveCapacitanceMsg(PurpleDropMessage):
             self.measurement = 0
 
     @staticmethod
-    def predictSize(buf: bytearray) -> int:
+    def predictSize(buf: bytes) -> int:
         return 5
 
     def fill(self, fill_data):
@@ -55,7 +55,7 @@ class ActiveCapacitanceMsg(PurpleDropMessage):
 class BulkCapacitanceMsg(PurpleDropMessage):
     ID = 2
 
-    def __init__(self, fill_data: Optional[bytearray]=None):
+    def __init__(self, fill_data: Optional[bytes]=None):
         if fill_data is not None:
             self.fill(fill_data)
         else:
@@ -64,7 +64,7 @@ class BulkCapacitanceMsg(PurpleDropMessage):
             self.measurements: Sequence[int] = []
 
     @staticmethod
-    def predictSize(buf: bytearray) -> int:
+    def predictSize(buf: bytes) -> int:
         if len(buf) < 3:
             return 0
         else:
@@ -81,14 +81,14 @@ class BulkCapacitanceMsg(PurpleDropMessage):
 class CommandAckMsg(PurpleDropMessage):
     ID = 4
 
-    def __init__(self, fill_data: Optional[bytearray]=None):
+    def __init__(self, fill_data: Optional[bytes]=None):
         if fill_data is not None:
             self.fill(fill_data)
         else:
             self.acked_id = 0
 
     @staticmethod
-    def predictSize(buf: bytearray) -> int:
+    def predictSize(buf: bytes) -> int:
         return 2
 
     def fill(self, buf):
@@ -140,11 +140,11 @@ class DataBlobMsg(PurpleDropMessage):
 class ElectrodeEnableMsg(PurpleDropMessage):
     ID = 0
 
-    def __init__(self, fill_data: Optional[bytearray]=None):
+    def __init__(self, fill_data: Optional[bytes]=None):
         self.values = [0] * 16
 
     @staticmethod
-    def predictSize(buf: bytearray) -> int:
+    def predictSize(buf: bytes) -> int:
         return 16
 
     def to_bytes(self):
@@ -154,16 +154,16 @@ class ElectrodeEnableMsg(PurpleDropMessage):
 class SetParameterMsg(PurpleDropMessage):
     ID = 6
 
-    def __init__(self, fill_data: Optional[bytearray]=None):
+    def __init__(self, fill_data: Optional[bytes]=None):
         if fill_data is not None:
             if len(fill_data) < 10:
                 raise RuntimeError("Need at least 10 bytes to fill a SetParameterMsg")
-            self._buf = fill_data
+            self._buf = bytearray(fill_data)
         else:
             self._buf = bytearray([self.ID] + [0]*9)
 
     @staticmethod
-    def predictSize(buf: bytearray) -> int:
+    def predictSize(buf: bytes) -> int:
         return 10
 
     def param_idx(self) -> int:
@@ -196,11 +196,11 @@ class SetParameterMsg(PurpleDropMessage):
         else:
             self._buf[9] = 0
 
-    def fill(self, fill_data: bytearray):
-        self._buf = fill_data
+    def fill(self, fill_data: bytes):
+        self._buf = bytearray(fill_data)
 
-    def to_bytes(self) -> bytearray:
-        return self._buf
+    def to_bytes(self) -> bytes:
+        return bytes(self._buf)
 
     def __str__(self):
         return "SetParameterMsg(param_idx=%d, param_value=%d, write_flag=%d)" % \
@@ -209,7 +209,7 @@ class SetParameterMsg(PurpleDropMessage):
 class SetPwmMsg(PurpleDropMessage):
     ID = 9
 
-    def __init__(self, fill_data: Optional[bytearray]=None):
+    def __init__(self, fill_data: Optional[bytes]=None):
         if fill_data is not None:
             self.fill(fill_data)
         else:
@@ -225,20 +225,20 @@ class SetPwmMsg(PurpleDropMessage):
 class TemperatureMsg(PurpleDropMessage):
     ID = 7
 
-    def __init__(self, fill_data: Optional[bytearray]=None):
+    def __init__(self, fill_data: Optional[bytes]=None):
         if fill_data is not None:
             self.fill(fill_data)
         else:
             self.measurements: Sequence[int] = []
 
     @staticmethod
-    def predictSize(buf: bytearray) -> int:
+    def predictSize(buf: bytes) -> int:
         if(len(buf) < 2):
             return 0
         else:
             return buf[1]*2 + 2
 
-    def fill(self, buf: bytearray):
+    def fill(self, buf: bytes):
         if len(buf) < 2:
             raise ValueError("Insufficient bytes for TemperatureMsg")
         count = buf[1]
@@ -257,7 +257,7 @@ class TemperatureMsg(PurpleDropMessage):
 class HvRegulatorMsg(PurpleDropMessage):
     ID = 8
 
-    def __init__(self, fill_data: Optional[bytearray]=None):
+    def __init__(self, fill_data: Optional[bytes]=None):
         if fill_data is not None:
             self.fill(fill_data)
         else:
@@ -265,14 +265,14 @@ class HvRegulatorMsg(PurpleDropMessage):
             self.v_target_out = 0
 
     @staticmethod
-    def predictSize(buf: bytearray) -> int:
+    def predictSize(buf: bytes) -> int:
         return 7
         if(len(buf) < 2):
             return 0
         else:
             return buf[1]*2 + 2
 
-    def fill(self, buf: bytearray):
+    def fill(self, buf: bytes):
         if len(buf) < 7:
             raise ValueError("Insufficient bytes for HvRegulatorMsg")
 
