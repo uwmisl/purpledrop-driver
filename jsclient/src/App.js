@@ -245,22 +245,6 @@ class App extends React.Component {
     } else {
       return <Router>
         <div>
-          <nav>
-            <ul>
-              <li>
-                <Link to="/">Home</Link>
-              </li>
-              <li>
-                <Link to="/capacitance_test">Capacitance Test View</Link>
-              </li>
-              <li>
-                <Link to="/liveview_test">LiveView Test</Link>
-              </li>
-            </ul>
-          </nav>
-
-          {/* A <Switch> looks through its children <Route>s and
-              renders the first one that matches the current URL. */}
           <Switch>
             <Route path="/capacitance_test">
               <CapacitanceDisplay capacitance={this.state.bulk_capacitance} layout={this.state.layout} width={400} height={250} />
