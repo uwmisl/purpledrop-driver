@@ -13,11 +13,16 @@ import gevent
 from gevent.pywsgi import WSGIServer
 from geventwebsocket import WebSocketServer, WebSocketApplication, Resource
 from geventwebsocket.exceptions import WebSocketError
-from flask import Flask
+from flask import Flask, Response, send_file
 from jsonrpc.backend.flask import api
+import logging
+import pkg_resources
+import tarfile
 
 from .purpledrop import PurpleDropController
 from .video_client import VideoClientProtobuf
+
+logger = logging.getLogger('purpledrop')
 
 class Config(object):
     """Collects configuration parameters for server and defines defaults
@@ -26,22 +31,40 @@ class Config(object):
     WS_PORT = 7001
     WEBROOT = None
 
-
 class EventApp(WebSocketApplication):
     """Empty Application. This server only broadcasts events
     """
     def on_message(self, msg):
         pass
 
+def extract_frontend_file(path):
+    tarball_data = pkg_resources.resource_stream('purpledrop', 'frontend-dist.tar.gz')
+    #print(f"Tarball is {len(tarball_data)}")
+    tar = tarfile.open(fileobj=tarball_data)
+    print(f"Tar: {tar}")
+    return tar.extractfile(path)
+
 def run_server(purpledrop: PurpleDropController, video_host=None):
     lock = gevent.lock.Semaphore()
 
     flask_app = Flask(__name__)
 
+    def return_files(path):
+        logger.debug(f"GET {path}")
+        try:
+            return send_file(extract_frontend_file(path), attachment_filename=path)
+        except KeyError:
+            logger.info(f"File {path} not found. Returning 404.")
+            return Response("File not found", status=404)
+
     flask_app.add_url_rule(
         '/rpc', view_func=api.as_view(), methods=['POST'])
     flask_app.add_url_rule(
         '/rpc/map', view_func=api.jsonrpc_map, methods=['GET'])
+    flask_app.add_url_rule(
+        '/<path:path>', view_func=return_files, methods=['GET'])
+    flask_app.add_url_rule(
+        '/', view_func=return_files, methods=['GET'], defaults={'path':'index.html'})
 
     # Register RPC methods
     for method_name in purpledrop.RPC_METHODS:

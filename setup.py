@@ -23,4 +23,7 @@ setup(
             'pytest',
         ],
     },
+    package_data={
+        "purpledrop": ['frontend-dist.tar.gz']
+    }
 )

@@ -1,10 +1,14 @@
 # PurpleDrop Control Interface
 
-This is a javascript app, created with mithril, to provide a simple UI for visually controlling the electrodes on the purple drop. You can activate electrodes by choosing a "brush size", and clicking on the electrode array where you'd like to activate. Shift clicking will activate the new electrodes without deactivating old electrodes. Use the arrow keys to move the currently activated electrode pattern. 
+This is a javascript app to provide a simple UI for controlling the purple drop. 
 
-The client communicates with the `pdd` rust executable. 
+A live view can display a video feed of the purpledrop, with a rendering of the electrode grid overlayed to show which electrodes are active. Electrodes can be turned on and off with the mouse and keyboard. 
 
-## Installing on the raspberry PI
+Click the "Parameters" button to adjust PurpleDrop configuration parameters. 
+
+This application is served by `pdserver` whenever it is running. 
+
+## Development 
 
 Building the webpack bundle requires node, and yarn (or npm). 
 
@@ -16,10 +20,8 @@ To build the distribution bundle:
 
 `yarn build`
 
-Now you can install everything generated in the `jsclient/dist` directory onto the pi, in whatever directory you prefer. For example: 
+To run the development server locally:
 
-`scp -r dist/* purpledrop:/var/www/purpledrop`
+`yarn start`
 
-The jsclient uses the rust executable `pdd` as a back-end server, and it will also serve the `dist` directory you installed above. For example:
 
-`sudo RUST_LOG=debug ~/pdd --config ~/purpledrop.toml --address 0.0.0.0:80 --static /var/www/purpledrop`
