@@ -28,11 +28,10 @@ class Config(object):
 
 
 class EventApp(WebSocketApplication):
-    """Empty Application. Could override methods, e.g. `on_message` to
-    handle incoming data, but atm this server only broadcasts events
+    """Empty Application. This server only broadcasts events
     """
-    pass
-
+    def on_message(self, msg):
+        pass
 
 def run_server(purpledrop: PurpleDropController, video_host=None):
     lock = gevent.lock.Semaphore()
@@ -44,11 +43,11 @@ def run_server(purpledrop: PurpleDropController, video_host=None):
     flask_app.add_url_rule(
         '/rpc/map', view_func=api.jsonrpc_map, methods=['GET'])
 
-    # Register RPC methods 
+    # Register RPC methods
     for method_name in purpledrop.RPC_METHODS:
         api.dispatcher.add_method(getattr(purpledrop, method_name))
 
-    http_server = WSGIServer(('', 7000), flask_app)
+    http_server = WSGIServer(('', 7000), flask_app, log=None)
     http_server.start()
 
     ws_server = WebSocketServer(('', 7001), Resource([('^/', EventApp)]), debug=False)

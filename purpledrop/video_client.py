@@ -11,6 +11,7 @@ class VideoClient(object):
         self.host = host
         self.callback = callback
         self.last_frame = 0
+        self.connected = False
 
         self.thread = threading.Thread(name="VideoClient", daemon=True, target=self.run)
         self.thread.start()
@@ -35,9 +36,15 @@ class VideoClient(object):
                 transform = resp.json()
 
                 self.callback(jpeg_bytes, transform)
+                if not self.connected:
+                    self.connected = True
+                    logging.info("Connected to video host")
 
             except requests.exceptions.RequestException as ex:
-                logging.info(f"Failed to capture frame from video host: {ex}")
+                logging.debug(f"Failed to capture frame from video host: {ex}")
+                if(self.connected):
+                    self.connected = False
+                    logging.info("Lost connection to video host")
                 time.sleep(3.0)
 
 

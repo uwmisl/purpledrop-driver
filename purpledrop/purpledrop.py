@@ -1,18 +1,22 @@
 """Low-level driver for communicating with PurpleDrop via serial messages
 """
 import inspect
+import logging
 import queue
 import serial
 import serial.tools.list_ports
 import sys
 import threading
-from typing import AnyStr, Callable, List, Optional, Sequence
+import time
+from typing import Any, AnyStr, Callable, List, Optional, Sequence
 
 import purpledrop.messages as messages
 import purpledrop.protobuf.messages_pb2 as messages_pb2
 from .messages import PurpleDropMessage, ElectrodeEnableMsg, SetPwmMsg
 from .message_framer import MessageFramer, serialize
 from .move_drop import move_drop, MoveDropResult
+
+logger = logging.getLogger("purpledrop")
 
 def resolve_msg_filter(filt):
     """If the filter provided is a message type, then create a filter which returns
@@ -61,25 +65,34 @@ class PurpleDropRxThread(object):
         self._ser = port
         self._framer = MessageFramer(PurpleDropMessage.predictSize)
         self._callback = callback
+        self.running = True
 
     def start(self):
         self._thread.start()
 
+    def stop(self):
+        self.running = False
+
+    def join(self):
+        self._thread.join()
+
     def run(self):
-        while True:
+        while self.running:
             rxBytes = None
-            #try:
-            rxBytes = self._ser.read(64)
-            #except serial.serialutil.SerialException:
-            #    continue # This happens intermittently, because select returns
-                         # but then read returns no data. pyserial thinks this
-                         # shouldn't be able to happen; I'm not so sure but it
-                         # needs investigation
-                         # See serial/serialposix.py:500
+            try:
+                rxBytes = self._ser.read(64)
+            except serial.serialutil.SerialException as e:
+                logger.warn(f"Failed reading from port: {e}")
+                self.running = False
+                return
             if(len(rxBytes) > 0):
                 for buf in self._framer.parse(rxBytes):
                     if(self._callback):
-                        self._callback(PurpleDropMessage.from_bytes(buf))
+                        try:
+                            self._callback(PurpleDropMessage.from_bytes(buf))
+                        except Exception as e:
+                            logger.error(f"Exception in RxThread callback: {e}")
+
 
     def set_callback(self, callback):
         self._callback = callback
@@ -128,13 +141,34 @@ class PurpleDropDevice():
     you should be using PurpleDropControl which provides higher level
     functionality and matches the JSON-RPC methods provided by `pd-server`.
     """
-    def __init__(self, port):
-        self.port = port
-        self._ser = serial.Serial(self.port, timeout=0.01, write_timeout=0.5)
-        self._rx_thread = PurpleDropRxThread(self._ser, callback=self.message_callback)
-        self._rx_thread.start()
+    def __init__(self, port=None):
+        self._rx_thread = None
+        self._ser = None
         self.lock = threading.Lock()
         self.listeners = []
+
+        if port is not None:
+            self.open(port)
+
+    def open(self, port):
+        self.close() # close any opened ports
+        logger.debug(f"PurpleDropDevice: opening {port}")
+        self._ser = serial.Serial(port, timeout=0.01, write_timeout=0.5)
+        self._rx_thread = PurpleDropRxThread(self._ser, callback=self.message_callback)
+        self._rx_thread.start()
+
+    def close(self):
+        logger.debug("Closing PurpleDropDevice")
+        if self._rx_thread is not None:
+            self._rx_thread.stop()
+            self._rx_thread.join()
+        if self._ser is not None:
+            self._ser.close()
+
+    def connected(self):
+        return self._ser is not None and \
+            self._rx_thread is not None and \
+            self._rx_thread.running
 
     def unregister_listener(self, listener):
         with self.lock:
@@ -162,6 +196,66 @@ class PurpleDropDevice():
             for l in self.listeners:
                 l.push_msg(msg)
 
+class PersistentPurpleDropDevice(PurpleDropDevice):
+    """A wrapper for PurpleDropDevice that transparently tries to
+    connect/reconnect to a device.
+
+    If a serial is provided, it will only connect to that serial number.
+    Otherwise, it will connect to any purple drop detected (and may choose
+    one arbitrarilty if there are multiple).
+    """
+    def __init__(self, serial_number: Optional[str]=None):
+        super().__init__()
+        self.target_serial_number: Optional[str] = serial_number
+        self.device_info: Optional[Any]
+        self.__thread = threading.Thread(
+            name="PersistentPurpleDropDevice Monitor",
+            target=self.__thread_entry,
+            daemon=True)
+        self.__thread.start()
+
+    def connected_serial_number(self) -> Optional[str]:
+        """Returns the serial number of the connected device
+        """
+        if self.device_info is None:
+            return None
+        else:
+            return self.device_info.serial_number
+
+    def __try_to_connect(self) -> bool:
+        device_list = list_purpledrop_devices()
+        selected_device = None
+        if len(device_list) == 0:
+            logger.debug("No purpledrop devices found to connect to")
+            return False
+        if self.target_serial_number:
+            for device in device_list:
+                if device.serial_number == self.target_serial_number:
+                    selected_device = device
+        else:
+            selected_device = device_list[0]
+
+        if selected_device is None:
+            serial_numbers = [d.serial_number for d in device_list]
+            logger.warn(f"Found purpledrop, but not connecting because it has unexpected serial number ({serial_numbers}")
+            return False
+
+        self.open(selected_device.device)
+        self.device_info = selected_device
+        logger.warning(f"Connected to purpledrop {selected_device.serial_number} on {selected_device.device}")
+        return True
+
+    def __thread_entry(self):
+        status = False
+        while True:
+            if not self.connected():
+                if status:
+                    logger.warning("Closing purpledrop device")
+                    self.close()
+                    status = False
+                logger.debug("Attempting to connect to purpledrop")
+                status = self.__try_to_connect()
+            time.sleep(5.0)
 
 class PurpleDropController(object):
     # Define the method names which will be made available via RPC server
@@ -279,6 +373,7 @@ class PurpleDropController(object):
         Arguments:
           - None
         """
+        logger.debug("Recieved get_parameter_definitions")
         return {
             "parameters": self.parameter_list,
         }
@@ -303,12 +398,13 @@ class PurpleDropController(object):
             raise TimeoutError("No response from purpledrop")
         else:
             paramDesc = self.__get_parameter_definition(paramIdx)
+            value = None
             if paramDesc is not None and paramDesc['type'] == 'float':
-                print(f"Param value: {resp.param_value_float()}")
-                return resp.param_value_float()
+                value = resp.param_value_float()
             else:
-                print(f"Param value: {resp.param_value_int()}")
-                return resp.param_value_int()
+                value = resp.param_value_int()
+            logger.info(f"get_parameter({paramIdx}) returning {value}")
+            return value
 
     def set_parameter(self, paramIdx, value):
         """Set a config parameter
@@ -322,6 +418,7 @@ class PurpleDropController(object):
             - value: A float or int (based on the definition) with the new
               value to assign
         """
+        logging.debug(f"Received set_parameter({paramIdx}, {value})")
         req_msg = messages.SetParameterMsg()
         req_msg.set_param_idx(paramIdx)
         paramDesc = self.__get_parameter_definition(paramIdx)
@@ -344,6 +441,7 @@ class PurpleDropController(object):
 
         Arguments: None
         """
+        logger.debug(f"Received get_board_definition")
         # TODO: This should be configurable
         return {
             "layout": {
@@ -516,6 +614,7 @@ class PurpleDropController(object):
 
         Arguments: None
         """
+        logging.debug("Received get_bulk_capacitance")
         return self.bulk_capacitance
 
     def get_active_capacitance(self) -> float:
@@ -523,6 +622,7 @@ class PurpleDropController(object):
 
         Arguments: None
         """
+        logging.debug("Received get_active_capacitance")
         return self.active_capacitance
 
     def get_electrode_pins(self):
@@ -532,6 +632,7 @@ class PurpleDropController(object):
 
         Returns: List of booleans
         """
+        logging.debug("Received get_electrode_pins")
         return self.pin_state
 
     def set_electrode_pins(self, pins: Sequence[int]):
@@ -543,6 +644,7 @@ class PurpleDropController(object):
         Arguments:
             - pins: A list of pin numbers to activate
         """
+        logging.debug(f"Received set_electrode_pins({pins})")
         msg = ElectrodeEnableMsg()
         event = messages_pb2.PurpleDropEvent()
         self.pin_state = [False] * 128
@@ -568,6 +670,7 @@ class PurpleDropController(object):
             - size: A list -- [width, height] -- specifying the size of the drop to be moved
             - direction: One of, "Up", "Down", "Left", "Right"
         """
+        logging.debug(f"Received move_drop({start}, {size}, {direction})")
         return move_drop(self, start, size, direction)
 
     def get_temperatures(self) -> Sequence[float]:
@@ -575,6 +678,7 @@ class PurpleDropController(object):
 
         Arguments: None
         """
+        logging.debug("Received get_temperatures")
         return self.temperatures
 
     def set_pwm_duty_cycle(self, chan: int, duty_cycle: float):
@@ -584,6 +688,7 @@ class PurpleDropController(object):
             - chan: An integer specifying the channel to set
             - duty_cycle: A float specifying the duty cycle in range [0, 1.0]
         """
+        logging.debug(f"Received set_pwm_duty_cycle({chan}, {duty_cycle})")
         self.duty_cycles[chan] = duty_cycle
         msg = SetPwmMsg()
         msg.chan = chan
@@ -597,5 +702,5 @@ class PurpleDropController(object):
 
         Returns: A float, in volts
         """
+        logging.debug("Received get_hv_supply_voltage")
         return self.hv_supply_voltage
-
