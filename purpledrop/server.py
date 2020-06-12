@@ -41,7 +41,6 @@ def extract_frontend_file(path):
     tarball_data = pkg_resources.resource_stream('purpledrop', 'frontend-dist.tar.gz')
     #print(f"Tarball is {len(tarball_data)}")
     tar = tarfile.open(fileobj=tarball_data)
-    print(f"Tar: {tar}")
     return tar.extractfile(path)
 
 def run_server(purpledrop: PurpleDropController, video_host=None):
