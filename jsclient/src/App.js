@@ -56,7 +56,6 @@ function setStateWrapper(component, minRenderPeriod_ms) {
 // Register an App instance and feed it state updates
 function hookup_remote_state(app) {
   let imageObjectUrl = null;
-  let hvCounter = 0;
   let imageTimeout = null;
 
   let stateWrapper = setStateWrapper(app, 500);
@@ -103,13 +102,10 @@ function hookup_remote_state(app) {
         bulk_capacitance: event.bulkCapacitance.measurements,
       });
     } else if(event.hvRegulator) {
-      hvCounter++;
-      if((hvCounter % 100) == 0) {
-        stateWrapper.setStatePassive({
-          voltage: event.hvRegulator.voltage,
-          vTargetOut: event.hvRegulator.vTargetOut,
-        });
-      }
+      stateWrapper.setStatePassive({
+        voltage: event.hvRegulator.voltage,
+        vTargetOut: event.hvRegulator.vTargetOut,
+      });
     } else if(event.temperatureControl) {
       stateWrapper.setStatePassive({temperatures: event.temperatureControl.temperatures});
     }
