@@ -57,6 +57,7 @@ def parameter_list():
         make_param(23, "Sample Delay", "ns, Time between first and second integrator sample"),
         make_param(24, "Blanking Delay", "ns, Time between blank and integrator reset for active measure"),
         make_param(25, "Integrator Reset Delay", "ns, Time between reset release and first sample"),
+        make_param(26, "Augment Top Plate Low Side", "Enable the extra FET to pulldown GND", "bool"),
     ]
 
 class PurpleDropRxThread(object):
