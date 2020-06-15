@@ -16,10 +16,8 @@ export default function PdSocket(callback) {
   };
 
   function create_socket(uri) {
-    //let eventsocket = new WebSocket(`ws://${location.hostname}:7001`);
     eventsocket = new WebSocket(uri);
-    //let eventsocket = new WebSocket('ws://localhost:7001')
-
+    
     eventsocket.onclose = () => {
       console.log('WebSocket closed. Will attempt reconnect.');
       setTimeout(() => {
@@ -40,10 +38,7 @@ export default function PdSocket(callback) {
         });
     };
   }
-   //let eventsocket = new WebSocket(`ws://${location.hostname}:7001`);
-   //let eventsocket = new WebSocket(');
-   //let eventsocket = new WebSocket('ws://localhost:7001')
-  create_socket('ws://10.144.112.21:7001');
+  create_socket('ws://${location.hostname}:7001');
   
   return wrapped_socket;
 }
