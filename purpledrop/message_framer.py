@@ -29,16 +29,20 @@ def serialize(input: bytes) -> bytes:
     start, control code escaping, and checksum.
     """
     chk_a, chk_b = calc_checksum(input)
+
     out = [0x7e]
-    for b in input:
+    def add_byte(b):
         if b == 0x7d or b == 0x7e:
             out.append(0x7d)
             out.append(b ^ 0x20)
         else:
             out.append(b)
-    
-    out.append(chk_a)
-    out.append(chk_b)
+
+    for b in input:
+        add_byte(b)
+        
+    add_byte(chk_a)
+    add_byte(chk_b)
     return bytes(out)
 
 class MessageFramer(object):
