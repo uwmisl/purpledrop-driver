@@ -38,7 +38,7 @@ export default function PdSocket(callback) {
         });
     };
   }
-  create_socket('ws://${location.hostname}:7001');
+  create_socket(`ws://${location.hostname}:7001`);
   
   return wrapped_socket;
 }
