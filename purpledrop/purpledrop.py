@@ -61,6 +61,14 @@ def parameter_list():
         make_param(30, "Top Plate Pin", "Pin number of HV507 output driving top plate"),
     ]
 
+def get_pb_timestamp():
+    """Get a protobuf timestamp for the current system time
+    """
+    time_f = time.time()
+    ts = messages_pb2.Timestamp()
+    ts.seconds = int(time_f)
+    ts.nanos = int((time_f % 1) * 1e9)
+    return ts
 class PurpleDropRxThread(object):
     def __init__(self, port: serial.Serial, callback: Callable[[PurpleDropMessage], None]=None):
         self._thread = threading.Thread(target=self.run, name="PurpleDrop Rx", daemon=True)
@@ -317,6 +325,7 @@ class PurpleDropController(object):
                 cap_event = messages_pb2.PurpleDropEvent()
                 cap_event.active_capacitance.measurement.capacitance = float(self.active_capacitance)
                 cap_event.active_capacitance.measurement.drop_present = False
+                cap_event.active_capacitance.timestamp.CopyFrom(get_pb_timestamp())
                 self.__fire_event(cap_event)
 
         elif isinstance(msg, messages.BulkCapacitanceMsg):
@@ -331,6 +340,7 @@ class PurpleDropController(object):
                 m.drop_present = raw > 50
                 return m
             bulk_event.bulk_capacitance.measurements.extend([make_cap_measurement(x) for x in self.bulk_capacitance])
+            bulk_event.bulk_capacitance.timestamp.CopyFrom(get_pb_timestamp())
             self.__fire_event(bulk_event)
 
         elif isinstance(msg, messages.HvRegulatorMsg):
@@ -340,6 +350,7 @@ class PurpleDropController(object):
                 event = messages_pb2.PurpleDropEvent()
                 event.hv_regulator.voltage = msg.voltage
                 event.hv_regulator.v_target_out = msg.v_target_out
+                event.hv_regulator.timestamp.CopyFrom(get_pb_timestamp())
                 self.__fire_event(event)
 
         elif isinstance(msg, messages.TemperatureMsg):
@@ -350,6 +361,7 @@ class PurpleDropController(object):
             for i in range(len(self.temperatures)):
                 duty_cycles.append(self.duty_cycles.get(i, 0.0))
             event.temperature_control.duty_cycles[:] = duty_cycles
+            event.temperature_control.timestamp.CopyFrom(get_pb_timestamp())
             self.__fire_event(event)
 
     def __fire_event(self, event):

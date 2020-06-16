@@ -63,11 +63,13 @@ message ImageTransform {
 message HvRegulator {
     float voltage = 1;
     float v_target_out = 2;
+    Timestamp timestamp = 3;
 }
 
 message TemperatureControl {
     repeated float temperatures = 1;
     repeated float duty_cycles = 2;
+    Timestamp timestamp = 3;
 }
 
 message PurpleDropEvent {
