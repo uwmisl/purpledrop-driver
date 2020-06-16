@@ -58,6 +58,7 @@ def parameter_list():
         make_param(24, "Blanking Delay", "ns, Time between blank and integrator reset for active measure"),
         make_param(25, "Integrator Reset Delay", "ns, Time between reset release and first sample"),
         make_param(26, "Augment Top Plate Low Side", "Enable the extra FET to pulldown GND", "bool"),
+        make_param(30, "Top Plate Pin", "Pin number of HV507 output driving top plate"),
     ]
 
 class PurpleDropRxThread(object):
