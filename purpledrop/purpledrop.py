@@ -108,18 +108,29 @@ class PurpleDropRxThread(object):
         self._callback = callback
 
 class SyncListener(object):
+    class MsgDelegate(object):
+        def __init__(self, filter_func, fifo):
+            self.filter = filter_func
+            self.fifo = fifo
+
+        def __call__(self, msg: PurpleDropMessage):
+            if self.filter is None or self.filter(msg):
+                self.fifo.put(msg)
+
     def __init__(self, owner, msg_filter=None):
         self.owner = owner
         self.filter = resolve_msg_filter(msg_filter)
-
         self.fifo = queue.Queue()
+        self.delegate = self.MsgDelegate(self.filter, self.fifo)
 
     def __del__(self):
-        self.owner.unregister_listener(self)
+        self.unregister()
 
-    def push_msg(self, msg: PurpleDropMessage):
-        if self.filter is None or self.filter(msg):
-            self.fifo.put(msg)
+    def unregister(self):
+        self.owner.unregister_listener(self.delegate)
+
+    def get_msg_handler(self):
+        return self.delegate
 
     def wait(self, timeout: Optional[float]=None) -> Optional[PurpleDropMessage]:
         try:
@@ -128,17 +139,27 @@ class SyncListener(object):
             return None
 
 class AsyncListener(object):
+    class MsgDelegate(object):
+        def __init__(self, filter_func, callback):
+            self.filter = filter_func
+            self.callback = callback
+
+        def __call__(self, msg: PurpleDropMessage):
+            if self.filter is None or self.filter(msg):
+                self.callback(msg)
+
+
     def __init__(self, owner, callback, msg_filter=None):
         self.owner = owner
         self.callback = callback
         self.filter = resolve_msg_filter(msg_filter)
+        self.delegate = self.MsgDelegate(self.filter, callback)
 
     def __del__(self):
-        self.owner.unregister_listener(self)
+        self.owner.unregister_listener(self.delegate)
 
-    def push_msg(self, msg: PurpleDropMessage):
-        if self.filter is None or self.filter(msg):
-            self.callback(msg)
+    def get_msg_handler(self):
+        return self.delegate
 
 class PurpleDropDevice():
     """Low level messaging for controlling a PurpleDrop via a serial port
@@ -187,13 +208,13 @@ class PurpleDropDevice():
     def get_sync_listener(self, msg_filter=None):
         new_listener = SyncListener(owner=self, msg_filter=msg_filter)
         with self.lock:
-            self.listeners.append(new_listener)
+            self.listeners.append(new_listener.get_msg_handler())
         return new_listener
 
     def get_async_listener(self, callback, msg_filter=None):
         new_listener = AsyncListener(owner=self, callback=callback, msg_filter=msg_filter)
         with self.lock:
-            self.listeners.append(new_listener)
+            self.listeners.append(new_listener.get_msg_handler())
         return new_listener
 
     def send_message(self, msg: PurpleDropMessage):
@@ -203,8 +224,8 @@ class PurpleDropDevice():
 
     def message_callback(self, msg: PurpleDropMessage):
         with self.lock:
-            for l in self.listeners:
-                l.push_msg(msg)
+            for handler in self.listeners:
+                handler(msg)
 
 class PersistentPurpleDropDevice(PurpleDropDevice):
     """A wrapper for PurpleDropDevice that transparently tries to
