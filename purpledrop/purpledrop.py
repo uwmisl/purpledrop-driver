@@ -101,7 +101,7 @@ class PurpleDropRxThread(object):
                         try:
                             self._callback(PurpleDropMessage.from_bytes(buf))
                         except Exception as e:
-                            logger.error(f"Exception in RxThread callback: {e}")
+                            logger.exception(e)
 
 
     def set_callback(self, callback):
