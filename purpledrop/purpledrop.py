@@ -333,7 +333,7 @@ class PurpleDropController(object):
                     return True
             return False
 
-        self.purpledrop.get_async_listener(self.__message_callback, msg_filter)
+        self.listener = self.purpledrop.get_async_listener(self.__message_callback, msg_filter)
 
     def __message_callback(self, msg):
         if isinstance(msg, messages.ActiveCapacitanceMsg):
