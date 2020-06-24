@@ -1,9 +1,23 @@
 import React from 'react';
+import { SizeMe } from 'react-sizeme';
 import PropTypes from 'prop-types';
 import ElectrodeSvg from './ElectrodeSvg';
 import colormap from 'colormap';
 
 import './CapacitanceDisplay.css';
+
+
+function getDisplaySize(size, electrodeAspectRatio) {
+  const containerAspect = size.width / size.height;
+  let displayWidth = size.width;
+  let displayHeight = size.height;
+  if (containerAspect > electrodeAspectRatio) {
+      displayWidth = electrodeAspectRatio * displayHeight;
+  } else {
+      displayHeight = displayWidth / electrodeAspectRatio;
+  }
+  return {width: displayWidth, height: displayHeight};
+}
 
 class CapacitanceDisplay extends React.Component {
   constructor(props) {
@@ -40,15 +54,8 @@ class CapacitanceDisplay extends React.Component {
 
     let layout = this.props.layout;
     let extent = layout.extent();
-    let aspect_ratio = (extent.maxX - extent.minX) / (extent.maxY - extent.minY);
-    let height = this.props.height;
-    let width = this.props.width;
-    if(aspect_ratio > width/height) {
-      height = width / aspect_ratio;
-    } else {
-      width = height * aspect_ratio;
-    }
-    let message = "";
+    let electrodeAspectRatio = (extent.maxX - extent.minX) / (extent.maxY - extent.minY);
+    let message = "Mouse-over for electrode capacitance";
     if(this.state.mouseOverPin) {
       let capacitance = this.props.capacitance[this.state.mouseOverPin];
       let measurement = "NA";
@@ -57,18 +64,44 @@ class CapacitanceDisplay extends React.Component {
       }
       message = `Pin ${this.state.mouseOverPin}: ${measurement}`;
     }
-    return <div style={{display: "flex", flexDirection: "column", alignContent: 'center', width: "100%"}}>
-      <h3 style={{textAlign:'center'}}>Capacitance</h3>
-      <ElectrodeSvg 
-        svgId="capacitance-display-svg"
-        layout={this.props.layout}
-        width={width}
-        height={height}
-        styleMap={styleMap}
-        onMouseOver={this.onMouseOver}
-        onMouseOut={this.onMouseOut}
-      />
-      <div style={{textAlign: 'center'}}><span>{message}</span></div>
+
+    const flexContainerStyle = {
+      display: "flex",
+      flexDirection: "column",
+      alignContent: 'center',
+      height: "100%",
+    };
+
+    const contentBoxStyle = {
+      flexGrow: 1,
+    };
+
+    return <div id='capacitance-flex-container' style={flexContainerStyle}>
+      <div id='capacitance-electrode-box' style={contentBoxStyle}>
+        <SizeMe monitorHeight>
+          {({size}) => {
+            const {width, height} = getDisplaySize(size, electrodeAspectRatio);
+            return <div style={{ position: 'relative', height: '100%' }}>
+              <div style={{position: 'absolute', width: width, height: height }}>
+                <ElectrodeSvg
+                  svgId="capacitance-display-svg"
+                  layout={this.props.layout}
+                  width={width}
+                  height={height}
+                  imageHeight={height}
+                  imageWidth={width}
+                  styleMap={styleMap}
+                  onMouseOver={this.onMouseOver}
+                  onMouseOut={this.onMouseOut}
+                />
+              </div>
+            </div>;
+          }}
+        </SizeMe>
+      </div>
+      <div id='capacitance-message-box' style={{textAlign: 'center'}}>
+          <span>{message}</span>
+      </div>
     </div>;
   }
 }

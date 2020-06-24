@@ -59,10 +59,13 @@
     "protobufjs": "^6.8.8",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
+    "react-grid-layout": "^0.18.3",
+    "react-measure": "^2.3.0",
     "react-modal": "^3.11.2",
     "react-numeric-input": "^2.2.3",
     "react-resizable": "^1.10.1",
     "react-router-dom": "^5.2.0",
+    "react-sizeme": "^2.6.12",
     "regenerator-runtime": "^0.13.3",
     "simple-jsonrpc-js": "^1.0.1"
   },

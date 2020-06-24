@@ -17,12 +17,12 @@ class Parameter extends React.Component {
       this.props.onSave(this.props.id).then(
         () => {
           this.setState({message: "Saved"});
-          setTimeout(() => {this.setState({message: ""})}, 2000);
+          setTimeout(() => { this.setState({message: ""}); }, 2000);
         }, 
         () => {
           this.setState({message: "Failed"});
-        }
-      )
+        },
+      );
     }
   }
 

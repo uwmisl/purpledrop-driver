@@ -1,4 +1,5 @@
 import React from 'react';
+import { SizeMe } from 'react-sizeme';
 import PropTypes from 'prop-types';
 import ElectrodeSvg from './ElectrodeSvg';
 
@@ -28,52 +29,52 @@ class LiveView extends React.Component {
     }
 
     decrementBrushSize() {
-        this.setState({brushSize: this.state.brushSize - 1});
+        this.setState({ brushSize: this.state.brushSize - 1 });
     }
 
     incrementBrushSize() {
-        this.setState({brushSize: this.state.brushSize + 1});
+        this.setState({ brushSize: this.state.brushSize + 1 });
     }
 
     getBrushPins(pin) {
         let pins = this.props.layout.getBrushPins(pin, [this.state.brushSize, this.state.brushSize]);
-        if(pins.length == 0) {
+        if (pins.length == 0) {
             pins.push(pin);
         }
         return pins;
     }
     onMouseOver(pin) {
         let pins = this.getBrushPins(pin);
-        this.setState({hoverPins: pins});
+        this.setState({ hoverPins: pins });
     }
 
     onMouseOut() {
-        this.setState({hoverPins: []});
+        this.setState({ hoverPins: [] });
     }
 
     onClick(e, pin) {
         let active_pins = [];
         // control key means leave currently active alone
         // shift key means deactivate instead of activate
-        if(e.ctrlKey || e.shiftKey) {
-            for(let i=0; i<this.props.electrodeState.length; i++) {
-                if(this.props.electrodeState[i]) {
+        if (e.ctrlKey || e.shiftKey) {
+            for (let i = 0; i < this.props.electrodeState.length; i++) {
+                if (this.props.electrodeState[i]) {
                     active_pins.push(i);
                 }
             }
         }
         let brushPins = this.getBrushPins(pin);
 
-        if(e.shiftKey) {
+        if (e.shiftKey) {
             active_pins = active_pins.filter((x) => !brushPins.includes(x));
         } else {
-            for(let i=0; i<brushPins.length; i++) {
-                if(!active_pins.includes(brushPins[i])) {
+            for (let i = 0; i < brushPins.length; i++) {
+                if (!active_pins.includes(brushPins[i])) {
                     active_pins.push(brushPins[i]);
                 }
             }
         }
-        if(this.props.onSetElectrodes) {
+        if (this.props.onSetElectrodes) {
             this.props.onSetElectrodes(active_pins);
         }
     }
@@ -84,23 +85,23 @@ class LiveView extends React.Component {
         }
 
         switch (event.key) {
-        case 'ArrowDown':
-            this.move(0, 1);
-            break;
-        case 'ArrowUp':
-            this.move(0, -1);
-            break;
-        case 'ArrowLeft':
-            this.move(-1, 0);
-            break;
-        case 'ArrowRight':
-            this.move(1, 0);
-            break;
-        case 'Escape':
-            this.props.onSetElectrodes([]);
-            break;
-        default:
-            return; // Quit when this doesn't handle the key event.
+            case 'ArrowDown':
+                this.move(0, 1);
+                break;
+            case 'ArrowUp':
+                this.move(0, -1);
+                break;
+            case 'ArrowLeft':
+                this.move(-1, 0);
+                break;
+            case 'ArrowRight':
+                this.move(1, 0);
+                break;
+            case 'Escape':
+                this.props.onSetElectrodes([]);
+                break;
+            default:
+                return; // Quit when this doesn't handle the key event.
         }
 
         // Cancel the default action to avoid it being handled twice
@@ -109,17 +110,17 @@ class LiveView extends React.Component {
 
     move(dx, dy) {
         let activePins = [];
-        for(let i=0; i<this.props.electrodeState.length; i++) {
-            if(this.props.electrodeState[i]) {
+        for (let i = 0; i < this.props.electrodeState.length; i++) {
+            if (this.props.electrodeState[i]) {
                 activePins.push(i);
             }
         }
         let newPins = [];
-        for(let i=0; i<activePins.length; i++) {
+        for (let i = 0; i < activePins.length; i++) {
             let pinLoc = this.props.layout.findPinLocation(activePins[i]);
             let newLoc = [pinLoc[0] + dx, pinLoc[1] + dy];
             let pin = this.props.layout.getPinAtPos(newLoc[0], newLoc[1]);
-            if(pin) {
+            if (pin) {
                 newPins.push(pin);
             } else {
                 // We ran off the regular grid, so we're going to refuse to move
@@ -134,39 +135,70 @@ class LiveView extends React.Component {
 
     render() {
         let classMap = {};
-        for(let i=0; i<128; i++) {
+        for (let i = 0; i < 128; i++) {
             classMap[i] = "electrode";
-            if(this.state.hoverPins.includes(i)) {
+            if (this.state.hoverPins.includes(i)) {
                 classMap[i] += " hover";
             }
-            if(this.props.electrodeState[i]) {
+            if (this.props.electrodeState[i]) {
                 classMap[i] += " active";
             }
         }
-        // Adjust width/height based on whether an image is present. 
-        // Couldn't find a CSS only solution to keep the SVG/IMG tag the same size when image was there,
-        // but also allow the SVG to grow when no image was there, so conditionally changing the style 
-        // to work around.
-        let wrapperStyles = {};
-        if(!this.props.image) {
-            wrapperStyles = {width: '100%', height: '100%'}
+
+        function getDisplaySize(size, imageSize) {
+            const containerAspect = size.width / size.height;
+            const imageAspect = imageSize.width / imageSize.height;
+            let displayWidth = size.width;
+            let displayHeight = size.height;
+            if (containerAspect > imageAspect) {
+                displayWidth = imageAspect * displayHeight;
+            } else {
+                displayHeight = displayWidth / imageAspect;
+            }
+            return {width: displayWidth, height: displayHeight};
         }
-        return <div style={{width: '100%', display: 'flex', flexDirection: 'column'}}>
-            <div className='electrode-grid-wrapper' style={wrapperStyles}>
-                <img className='electrode-grid-img' src={this.props.image || ''} />
-                <ElectrodeSvg
-                    svgId="electrode-grid-svg"
-                    layout={this.props.layout}
-                    transform={this.props.transform}
-                    classMap={classMap}
-                    width={this.props.imageWidth}
-                    height={this.props.imageHeight}
-                    onMouseOver={this.onMouseOver}
-                    onMouseOut={this.onMouseOut}
-                    onClick={this.onClick}
-                />
+
+        const flexContainerStyle = {
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+        };
+        const contentBoxStyle = {
+            flexGrow: 1,
+        };
+
+        return <div id='liveview-flex-container' style={flexContainerStyle}>
+            <div id='liveview-content-box' style={contentBoxStyle}>
+                <SizeMe monitorHeight>
+                    {({size}) => {
+                        const {width, height} = getDisplaySize(size, {width: this.props.imageWidth, height: this.props.imageHeight});
+                        return <div style={{ position: 'relative', height: '100%' }}>
+                            <div style={{position: 'absolute', width: width, height: height }}>
+                                <img
+                                    style={{ visibility: this.props.image ? 'visible' : 'hidden' , width: width, height: height}}
+                                    className='electrode-grid-img'
+                                    src={this.props.image || ''}
+                                />
+                                <ElectrodeSvg
+                                    svgId="electrode-grid-svg"
+                                    layout={this.props.layout}
+                                    transform={this.props.transform}
+                                    classMap={classMap}
+                                    width={width}
+                                    height={height}
+                                    imageWidth={this.props.imageWidth}
+                                    imageHeight={this.props.imageHeight}
+                                    onMouseOver={this.onMouseOver}
+                                    onMouseOut={this.onMouseOut}
+                                    onClick={this.onClick}
+                                />
+                            </div>
+                        </div>;
+                    }}
+                    </SizeMe>
+
             </div>
-            <div className="toolbar">
+            <div style={{padding: '5px'}} className="toolbar">
                 <button className="brushsize" onClick={() => this.decrementBrushSize()}>Smaller</button>
                 <input id="brushsize" type="text" disabled value={this.state.brushSize} name="brushsize" />
                 <button className="brushsize" onClick={() => this.incrementBrushSize()}>Bigger</button>

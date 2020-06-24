@@ -4,20 +4,23 @@ import {
   BrowserRouter as Router,
   Switch,
   Route,
-  Link,
 } from 'react-router-dom';
 import Modal from 'react-modal';
-import {ResizableBox} from 'react-resizable';
+import GridLayout, {WidthProvider} from 'react-grid-layout';
+import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
 import PdRpc from 'rpc';
 import PdSocket from 'pdsocket';
 import Layout from './utils/layout';
-import Preloader from './components/Preloader';
+
 import CapacitanceDisplay from './components/CapacitanceDisplay';
+import DraggableBox from './components/DraggableBox';
 import LiveView from './components/LiveView';
-import Stats from './components/Stats';
 import ParameterList from './components/ParameterList';
+import Preloader from './components/Preloader';
+import Stats from './components/Stats';
+
 import mislLogo from './images/misl-logo.svg';
 import uwLogo from './images/uw-logo.png';
 
@@ -168,6 +171,41 @@ function hookup_remote_state(app) {
   };
 }
 
+let persistedLayout = {
+  defaultLayout: [
+    {i: 'Live View', x: 0, y: 0, w: 10, h: 10},
+    {i: 'Capacitance', x:0, y:1, w: 4, h: 4},
+    {i: 'Stats', x: 1, y:1, w:4,  h:4},
+  ],
+  layout: [],
+  load() {
+    let layout = this.defaultLayout;
+    let ls = null;
+    if (global.localStorage) {
+      try {
+        ls = JSON.parse(global.localStorage.getItem("purpledrop-dashboard"));
+      } catch (e) {
+        /*Ignore*/
+      }
+      if(ls) {
+        layout = ls['layout'];
+      }
+    }
+    return layout;
+  },
+  save(new_layout) {
+    self.layout = new_layout;
+    if (global.localStorage) {
+      global.localStorage.setItem(
+        "purpledrop-dashboard",
+        JSON.stringify({
+          'layout': new_layout,
+        }),
+      );
+    }
+  },
+};
+
 class App extends React.Component {
   constructor(props) {
     super(props);
@@ -233,6 +271,8 @@ class App extends React.Component {
         transform             : 'translate(-50%, -50%)',
       },
     };
+
+    const WrappedGridLayout = WidthProvider(GridLayout);
 
     if(typeof this.state.layout === 'undefined') {
       return <div>
@@ -301,24 +341,46 @@ class App extends React.Component {
                       }}>Help</a>
                   </div>
                 </div>
-                <ResizableBox className="box" minConstraints={[250, 250]} width={600} height={525} lockAspectRatio={true}>
-                  <LiveView
-                    image={this.state.image}
-                    transform={this.state.imageTransform}
-                    electrodeState={this.state.electrodeState}
-                    layout={this.state.layout}
-                    imageWidth={this.state.imageWidth}
-                    imageHeight={this.state.imageHeight}
-                    onSetElectrodes={(pins) => {this.state.pdrpc.setElectrodePins(pins);}}
-                  />
-                </ResizableBox>
-                <ResizableBox className="box" minConstraints={[150, 150]} width={400} height={300} lockAspectRatio={true}>
-                  <CapacitanceDisplay capacitance={this.state.bulk_capacitance} layout={this.state.layout} width={400} height={400} />
-                </ResizableBox>
-                <ResizableBox className="box" minConstraints={[150, 150]} width={400} height={300} lockAspectRatio={true}>
-                  <Stats voltage={this.state.voltage} temperatures={this.state.temperatures} />
-                </ResizableBox>
-              </div>;
+
+                </div>
+                <div style={{position: "relative"}}>
+                  <WrappedGridLayout
+                    className="layout"
+                    layout={persistedLayout.load()}
+                    onLayoutChange={(layout) => { persistedLayout.save(layout); }}
+                    cols={20}
+                    rows={20}
+                    rowHeight={30}
+                    draggableCancel=".draggable-cancel"
+                    draggableHandle=".drag-handle">
+
+                    <div style={{ border: '1px solid #dddddd'}} key='Live View'>
+                      <DraggableBox title='Live View'>
+                        <LiveView
+                          image={this.state.image}
+                          transform={this.state.imageTransform}
+                          electrodeState={this.state.electrodeState}
+                          layout={this.state.layout}
+                          imageWidth={this.state.imageWidth}
+                          imageHeight={this.state.imageHeight}
+                          onSetElectrodes={(pins) => {this.state.pdrpc.setElectrodePins(pins);}}
+                        />
+                      </DraggableBox>
+                    </div>
+
+                    <div key='Capacitance'>
+                      <DraggableBox title='Capacitance'>
+                        <CapacitanceDisplay capacitance={this.state.bulk_capacitance} layout={this.state.layout} />
+                      </DraggableBox>
+                    </div>
+
+                    <div key='Stats'>
+                      <DraggableBox title='Stats'>
+                        <Stats voltage={this.state.voltage} temperatures={this.state.temperatures} />
+                      </DraggableBox>
+                    </div>
+                  </WrappedGridLayout>
+                </div>
             </Route>
           </Switch>
         </div>

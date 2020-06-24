@@ -39,37 +39,37 @@ class ElectrodeSvg extends React.Component {
     super(props);
     this.base_polygons = memoize((layout) => {
       return layout.electrode_polygons().map((electrode) => {
-  
+
         const shrinkOffset = 0.05;
         let points = electrode.points;
         let pin = electrode.pin;
-  
+
         if(electrode.pin !== null) {
           // Offset the polygons inward
           let offset = new Offset();
           points = offset.data(points).padding(shrinkOffset)[0];
         }
-  
+
         return {pin: pin, points: points};
       });
     });
   }
 
-  
+
 
   render() {
     const layout = this.props.layout;
-    const M = this.props.transform || default_transform(layout, this.props.width, this.props.height);
+    const M = this.props.transform || default_transform(layout, this.props.imageWidth, this.props.imageHeight);
 
     let polygons = [];
     this.base_polygons(layout).forEach((electrode) => {
       let pin = electrode.pin;
       let points = electrode.points;
-      
+
       if(pin === null) {
         return;
       }
-      
+
       // Map them by transform to new coordinate system
       points = transform(points, M);
 
@@ -85,10 +85,10 @@ class ElectrodeSvg extends React.Component {
       />;
       polygons.push(poly);
     }, this);
-  
-    
-    return <div>
-      <svg id={this.props.svgId} viewBox={`0 0 ${this.props.width} ${this.props.height}`}>
+
+
+    return <div style={{display: 'contents'}}>
+      <svg style={{width: this.props.width, height: this.props.height}} id={this.props.svgId} viewBox={`0 0 ${this.props.imageWidth} ${this.props.imageHeight}`}>
         {polygons}
       </svg>
     </div>;
@@ -98,6 +98,8 @@ class ElectrodeSvg extends React.Component {
 ElectrodeSvg.propTypes = {
   transform: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number)),
   layout: PropTypes.object,
+  imageWidth: PropTypes.number,
+  imageHeight: PropTypes.number,
   width: PropTypes.number,
   height: PropTypes.number,
   onMouseOut: PropTypes.func,
