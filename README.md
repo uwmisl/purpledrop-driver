@@ -13,6 +13,10 @@ The `pdserver` executable provides a service which detects and connects to a Pur
 2) A websocket streaming events (protobuf messages defined in `protobuf/messages.proto`) on `ws://0.0.0.0:7001`.
 3) A javascript front-end at `http://0.0.0.0:7000/`.
 
+The `pdcli` executable provides a command line interface for accessing the purpledrop. For example `pdcli info` will attempt to connect to the device and read its software version. See `pdcli --help` for full set of commands. 
+
+The `pdrecord` executable can be used to record the eventstream during experiments for later analysis or playback. Example: `pdrecord --host ws://192.168.0.2:7001 experiment1.pdlog`. 
+
 ## Installing 
 
 Clone the repository, and run `pip install .`.
