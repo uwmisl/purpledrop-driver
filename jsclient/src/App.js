@@ -173,9 +173,9 @@ function hookup_remote_state(app) {
 
 let persistedLayout = {
   defaultLayout: [
-    {i: 'Live View', x: 0, y: 0, w: 10, h: 10},
-    {i: 'Capacitance', x:0, y:1, w: 4, h: 4},
-    {i: 'Stats', x: 1, y:1, w:4,  h:4},
+    {i: 'Live View', x: 2, y: 0, w: 10, h: 15},
+    {i: 'Capacitance', x:12, y:0, w: 5, h: 7},
+    {i: 'Stats', x: 12, y:6, w:4,  h:4},
   ],
   layout: [],
   load() {
