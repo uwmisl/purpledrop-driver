@@ -305,8 +305,9 @@ class PurpleDropController(object):
         'get_hv_supply_voltage',
     ]
 
-    def __init__(self, purpledrop):
+    def __init__(self, purpledrop, board_definition):
         self.purpledrop = purpledrop
+        self.board_definition = board_definition
         self.active_capacitance = 0.0
         self.bulk_capacitance = []
         self.temperatures: Sequence[float] = []
@@ -470,179 +471,13 @@ class PurpleDropController(object):
         if resp is None:
             raise TimeoutError(f"No response from purpledrop to set parameter ({paramIdx})")
 
-
     def get_board_definition(self):
         """Get electrode board configuratin object
 
         Arguments: None
         """
         logger.debug(f"Received get_board_definition")
-        # TODO: This should be configurable
-        return {
-            "layout": {
-                "grid": [
-                    [None, None, None, None, None, None, 28, 98, None, None, None, None, None, None],
-                    [None, None, None, None, None, None, 27, 99, None, None, None, None, None, None],
-                    [11, 14, 16, 18, 20, 23, 26, 100, 102, 105, 109, 111, 113, 114],
-                    [12, 13, 15, 17, 19, 22, 25, 101, 104, 107, 110, 112, 115, 116],
-                    [5, 6, 7, 4, 3, 21, 24, 103, 108, 126, 125, 122, 123, 124],
-                    [0, 63, 62, 1, 2, 55, 46, 68, 106, 127, 64, 67, 66, 65],
-                    [60, 61, 54, 49, 51, 48, 44, 69, 82, 81, 79, 77, 76, 75],
-                    [53, 50, 47, 45, 42, 41, 43, 87, 86, 85, 84, 83, 80, 78],
-                    [None, None, None, None, None, None, 40, 88, None, None, None, None, None, None],
-                    [None, None, None, None, None, None, 39, 89, None, None, None, None, None, None],
-                    [None, None, None, None, None, None, 38, 90, None, None, None, None, None, None],
-                ],
-                "peripherals": [
-                    {
-                        "class": "reservoir",
-                        "type": "reservoirB",
-                        "id": 1,
-                        "origin": (-0.5, 2.5),
-                        "rotation": 180.0,
-                        "electrodes": [
-                            {
-                                "id": "A",
-                                "pin": 8,
-                                "polygon": [(0, -0.5), (-0.8, -0.5), (-0.8, -2), (2.4, -2), (2.4, 2), (-0.8, 2), (-0.8, 0.5), (0, 0.5)],
-                                "origin": (2.1, 0.00),
-                            },
-                            {
-                                "id": "B",
-                                "pin": 9,
-                                "polygon": [(-0.8, -0.5), (0.8, -0.5), (0.8, 0.5), (-0.8, 0.5)],
-                                "origin": (1.2, 0.0),
-                            },
-                            {
-                                "id": "C",
-                                "pin": 10,
-                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
-                                "origin": (0.0, 0.0),
-                            },
-                        ],
-                    },
-                    {
-                        "class": "reservoir",
-                        "type": "reservoirA",
-                        "id": 2,
-                        "origin": (-0.5, 7.5),
-                        "rotation": 180.0,
-                        "exit": 53,
-                        "electrodes": [
-                            {
-                                "id": "A",
-                                "pin": 58,
-                                "polygon": [(-0.5, -1.5), (3.5, -1.5), (3.5, 2.5), (-0.5, 2.5), (-0.5, 1), (0.5, 1), (0.5, 0), (-0.5, 0)],
-                                "origin": (1.5, -0.5),
-                            },
-                            {
-                                "id": "B",
-                                "pin": 57,
-                                "polygon": [(-0.5, -0.5), (1.0, -0.5), (1.0, 0.5), (-0.5, 0.5)],
-                                "origin": (1.0, 0.0),
-                            },
-                            {
-                                "id": "C",
-                                "pin": 56,
-                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
-                                "origin": (0.0, 0.0),
-                            },
-                            {
-                                "id": "D",
-                                "pin": 52,
-                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
-                                "origin": (0.5, -1.0),
-                            },
-                            {
-                                "id": "E",
-                                "pin": 59,
-                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
-                                "origin": (0.5, 1.0),
-                            },
-                        ],
-                    },
-                    {
-                        "class": "reservoir",
-                        "type": "reservoirA",
-                        "id": 3,
-                        "origin": (14.5, 7.5),
-                        "exit": 78,
-                        "electrodes": [
-                            {
-                                "id": "A",
-                                "pin": 71,
-                                "polygon": [(-0.5, -1.5), (3.5, -1.5), (3.5, 2.5), (-0.5, 2.5), (-0.5, 1), (0.5, 1), (0.5, 0), (-0.5, 0)],
-                                "origin": (1.5, -0.5),
-                            },
-                            {
-                                "id": "B",
-                                "pin": 72,
-                                "polygon": [(-0.5, -0.5), (1.0, -0.5), (1.0, 0.5), (-0.5, 0.5)],
-                                "origin": (1.0, 0.0),
-                            },
-                            {
-                                "id": "C",
-                                "pin": 73,
-                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
-                                "origin": (0.0, 0.0),
-                            },
-                            {
-                                "id": "D",
-                                "pin": 70,
-                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
-                                "origin": (0.5, -1.0),
-                            },
-                            {
-                                "id": "E",
-                                "pin": 74,
-                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
-                                "origin": (0.5, 1.0),
-                            },
-                        ],
-                    },
-                    {
-                        "class": "reservoir",
-                        "type": "reservoirA",
-                        "id": 4,
-                        "origin": (14.5, 2.5),
-                        "exit": 114,
-                        "electrodes": [
-                            {
-                                "id": "A",
-                                "pin": 120,
-                                "polygon": [(-0.5, -1.5), (3.5, -1.5), (3.5, 2.5), (-0.5, 2.5), (-0.5, 1), (0.5, 1), (0.5, 0), (-0.5, 0)],
-                                "origin": (1.5, -0.5),
-                            },
-                            {
-                                "id": "B",
-                                "pin": 119,
-                                "polygon": [(-0.5, -0.5), (1.0, -0.5), (1.0, 0.5), (-0.5, 0.5)],
-                                "origin": (1.0, 0.0),
-                            },
-                            {
-                                "id": "C",
-                                "pin": 118,
-                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
-                                "origin": (0.0, 0.0),
-                            },
-                            {
-                                "id": "D",
-                                "pin": 117,
-                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
-                                "origin": (0.5, -1.0),
-                            },
-                            {
-                                "id": "E",
-                                "pin": 121,
-                                "polygon": [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)],
-                                "origin": (0.5, 1.0),
-                            },
-                        ],
-                    },
-
-                ]
-            }
-        }
+        return self.board_definition.as_dict()
 
     def get_bulk_capacitance(self) -> List[float]:
         """Get the most recent capacitance scan results

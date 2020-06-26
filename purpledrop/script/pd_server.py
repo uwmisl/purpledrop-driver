@@ -3,13 +3,16 @@ monkey.patch_all()
 
 import click
 import logging
+import sys
 
+from purpledrop.electrode_board import load_board
 from purpledrop.purpledrop import PersistentPurpleDropDevice, PurpleDropController
 import purpledrop.server as server
 
 @click.command()
 @click.option('-v', '--verbose', count=True, help='-v for INFO, -vv for DEBUG')
-def main(verbose):
+@click.option('--board', 'board_file', help='Board name or path to board definition JSON file', default='misl_v4')
+def main(verbose, board_file):
     if verbose == 0:
         console_log_level = logging.WARNING
     elif verbose == 1:
@@ -24,8 +27,12 @@ def main(verbose):
         datefmt="%H:%M:%S",
         level=console_log_level)
 
+    board = load_board(board_file)
+    if board is None:
+        print("Could not load board definition for {board_file}")
+        sys.exit(1)
     pd_dev = PersistentPurpleDropDevice()
-    pd_control = PurpleDropController(pd_dev)
+    pd_control = PurpleDropController(pd_dev, board)
 
     # TODO: make video host configurable
     pdcam_host = "localhost:5000"

@@ -25,6 +25,6 @@ setup(
         ],
     },
     package_data={
-        "purpledrop": ['frontend-dist.tar.gz']
+        "purpledrop": ['frontend-dist.tar.gz', 'boards/*']
     }
 )
