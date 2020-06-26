@@ -20,7 +20,6 @@ import pkg_resources
 import tarfile
 
 from .purpledrop import PurpleDropController
-from .video_client import VideoClientProtobuf
 
 logger = logging.getLogger('purpledrop')
 
@@ -43,7 +42,7 @@ def extract_frontend_file(path):
     tar = tarfile.open(fileobj=tarball_data)
     return tar.extractfile(path)
 
-def run_server(purpledrop: PurpleDropController, video_host=None):
+def run_server(purpledrop: PurpleDropController, video_client=None):
     lock = gevent.lock.Semaphore()
 
     flask_app = Flask(__name__)
@@ -96,9 +95,8 @@ def run_server(purpledrop: PurpleDropController, video_host=None):
                     except WebSocketError:
                         pass
 
-    video_client = None
-    if video_host is not None:
-        video_client = VideoClientProtobuf(video_host, handle_video_update)
+    if video_client is not None:
+        video_client.register_callback(handle_video_update)
 
     purpledrop.register_event_listener(handle_event)
 

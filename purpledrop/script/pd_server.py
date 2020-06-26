@@ -7,12 +7,15 @@ import sys
 
 from purpledrop.electrode_board import load_board
 from purpledrop.purpledrop import PersistentPurpleDropDevice, PurpleDropController
+from purpledrop.playback import PlaybackPurpleDrop, index_log
+from purpledrop.video_client import VideoClientProtobuf
 import purpledrop.server as server
 
 @click.command()
 @click.option('-v', '--verbose', count=True, help='-v for INFO, -vv for DEBUG')
 @click.option('--board', 'board_file', help='Board name or path to board definition JSON file', default='misl_v4')
-def main(verbose, board_file):
+@click.option('--replay', 'replay_file', help='Launch replay server instead of connecting to HW', required=False)
+def main(verbose, board_file, replay_file):
     if verbose == 0:
         console_log_level = logging.WARNING
     elif verbose == 1:
@@ -31,12 +34,24 @@ def main(verbose, board_file):
     if board is None:
         print("Could not load board definition for {board_file}")
         sys.exit(1)
-    pd_dev = PersistentPurpleDropDevice()
-    pd_control = PurpleDropController(pd_dev, board)
 
-    # TODO: make video host configurable
-    pdcam_host = "localhost:5000"
-    server.run_server(pd_control, pdcam_host)
+    video_client = None
+    if replay_file is not None:
+        print(f"Computing seek index for {replay_file}...")
+        index, end_time = index_log(replay_file)
+        start_time = index[0].timestamp
+        print(f"Done. Loaded {end_time - start_time} seconds of data.")
+        print("Launching replay server...")
+        pd_control = PlaybackPurpleDrop(replay_file, index, board)
+    else:
+        pd_dev = PersistentPurpleDropDevice()
+        pd_control = PurpleDropController(pd_dev, board)
+        print("Launching HW server...")
+        # TODO: make video host configurable
+        video_host = "localhost:5000"
+        video_client = VideoClientProtobuf(video_host)
+
+    server.run_server(pd_control, video_client)
 
 if __name__ == '__main__':
     main()

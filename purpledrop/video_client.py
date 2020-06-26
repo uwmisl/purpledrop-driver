@@ -1,3 +1,4 @@
+
 import logging
 import requests
 import threading
@@ -7,7 +8,7 @@ from typing import AnyStr
 import purpledrop.protobuf.messages_pb2 as messages_pb2
 
 class VideoClient(object):
-    def __init__(self, host: str, callback):
+    def __init__(self, host: str, callback=None):
         self.host = host
         self.callback = callback
         self.last_frame = 0
@@ -15,6 +16,13 @@ class VideoClient(object):
 
         self.thread = threading.Thread(name="VideoClient", daemon=True, target=self.run)
         self.thread.start()
+
+    def register_callback(self, callback):
+        self.callback = callback
+
+    def on_callback(self, *args, **kwargs):
+        if self.callback is not None:
+            self.callback(*args, **kwargs)
 
     def run(self):
         while True:
@@ -35,7 +43,7 @@ class VideoClient(object):
                 resp.raise_for_status()
                 transform = resp.json()
 
-                self.callback(jpeg_bytes, transform)
+                self.on_callback(jpeg_bytes, transform)
                 if not self.connected:
                     self.connected = True
                     logging.info("Connected to video host")
@@ -49,9 +57,16 @@ class VideoClient(object):
 
 
 class VideoClientProtobuf(object):
-    def __init__(self, host, callback):
+    def __init__(self, host, callback=None):
         self.client = VideoClient(host, self.handler)
         self.callback = callback
+
+    def register_callback(self, callback):
+        self.callback = callback
+
+    def on_callback(self, *args, **kwargs):
+        if self.callback is not None:
+            self.callback(*args, **kwargs)
 
     def handler(self, jpeg, transform):
         image_event = messages_pb2.PurpleDropEvent()
@@ -69,5 +84,5 @@ class VideoClientProtobuf(object):
             transform_event.image_transform.transform[:] = []
         transform_event.image_transform.image_width = transform['image_width']
         transform_event.image_transform.image_height = transform['image_height']
-        self.callback(image_event, transform_event)
+        self.on_callback(image_event, transform_event)
 
