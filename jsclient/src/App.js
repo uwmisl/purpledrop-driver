@@ -188,7 +188,7 @@ let persistedLayout = {
         /*Ignore*/
       }
       if(ls) {
-        layout = ls['layout'];
+        layout = ls['grid_layout'];
       }
     }
     return layout;
@@ -199,13 +199,14 @@ let persistedLayout = {
       global.localStorage.setItem(
         "purpledrop-dashboard",
         JSON.stringify({
-          'layout': new_layout,
+          'grid_layout': new_layout,
         }),
       );
     }
   },
 };
 
+const WrappedGridLayout = WidthProvider(GridLayout);
 class App extends React.Component {
   constructor(props) {
     super(props);
@@ -272,9 +273,8 @@ class App extends React.Component {
       },
     };
 
-    const WrappedGridLayout = WidthProvider(GridLayout);
 
-    if(typeof this.state.layout === 'undefined') {
+    if(!this.state.layout) {
       return <div>
         <Preloader />
       </div>;
