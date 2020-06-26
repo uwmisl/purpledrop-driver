@@ -344,7 +344,8 @@ class PlaybackPurpleDrop(object):
         """
         while True:
             event = self.event_reader.next()
-            yield event
+            if event is not None:
+                yield event
             timestamp = get_timestamp(event) - self.time_origin
             if timestamp is not None and timestamp > time:
                 break
