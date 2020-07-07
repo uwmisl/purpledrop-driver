@@ -161,5 +161,6 @@
             }
 
         ]
-    }
+    },
+    "oversized_electrodes": [8, 58, 71, 120]
 }

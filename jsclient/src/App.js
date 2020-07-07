@@ -100,9 +100,9 @@ function hookup_remote_state(app) {
         imageWidth: event.imageTransform.imageWidth,
         imageHeight: event.imageTransform.imageHeight,
       });
-    } else if(event.bulkCapacitance) {
+    } else if(event.scanCapacitance) {
       stateWrapper.setStatePassive({
-        bulk_capacitance: event.bulkCapacitance.measurements,
+        bulk_capacitance: event.scanCapacitance.measurements,
       });
     } else if(event.hvRegulator) {
       stateWrapper.setStatePassive({

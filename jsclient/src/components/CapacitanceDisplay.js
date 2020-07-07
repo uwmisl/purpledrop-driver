@@ -42,11 +42,11 @@ class CapacitanceDisplay extends React.Component {
   }
 
   render() {
-    const NormMax = 1500;
+    const NormMax = 100;
     let styleMap = {};
     for(var i=0; i<this.props.capacitance.length; i++) {
       let cap = this.props.capacitance[i];
-      if(cap.dropPresent && cap.capacitance > 75) {
+      if(cap.capacitance > 1) {
         let colorIdx = Math.min(this.colormap.length-1, Math.floor(cap.capacitance * this.colormap.length / NormMax));
         styleMap[i] = {fill: this.colormap[colorIdx]};
       }
@@ -59,10 +59,12 @@ class CapacitanceDisplay extends React.Component {
     if(this.state.mouseOverPin) {
       let capacitance = this.props.capacitance[this.state.mouseOverPin];
       let measurement = "NA";
+      let raw = '';
       if (capacitance) {
-        measurement = capacitance.capacitance;
+        measurement = Math.round(capacitance.capacitance*100)/100;
+        raw = capacitance.raw;
       }
-      message = `Pin ${this.state.mouseOverPin}: ${measurement}`;
+      message = `Pin ${this.state.mouseOverPin}: ${measurement} (${raw})`;
     }
 
     const flexContainerStyle = {
@@ -107,7 +109,7 @@ class CapacitanceDisplay extends React.Component {
 }
 
 CapacitanceDisplay.propTypes = {
-  capacitance: PropTypes.arrayOf(PropTypes.exact({capacitance: PropTypes.number, dropPresent: PropTypes.bool})).isRequired,
+  capacitance: PropTypes.arrayOf(PropTypes.object).isRequired,
   layout: PropTypes.object,
   height: PropTypes.number,
   width: PropTypes.number,

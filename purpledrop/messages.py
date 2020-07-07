@@ -151,6 +151,29 @@ class ElectrodeEnableMsg(PurpleDropMessage):
         return struct.pack("<B" + "B" * len(self.values),
             *([self.ID] + self.values))
 
+class SetGainMsg(PurpleDropMessage):
+    ID = 11
+
+    def __init__(self, fill_data: Optional[bytes]=None):
+        self.gains: Sequence[int] = []
+
+    @staticmethod
+    def predictSize(buf: bytes) -> int:
+        return -1
+
+    def to_bytes(self):
+        # Store a count byte, and then 2 bits per gain
+        data = [len(self.gains)]
+        counter = 0
+
+        for g in self.gains:
+            if counter == 0:
+                data.append(0)
+            data[-1] |= (g & 0x3) << (counter * 2)
+            counter = (counter + 1) % 4
+        
+        return bytes(data)
+
 class SetParameterMsg(PurpleDropMessage):
     ID = 6
 

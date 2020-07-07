@@ -8,7 +8,7 @@ import serial.tools.list_ports
 import sys
 import threading
 import time
-from typing import Any, AnyStr, Callable, List, Optional, Sequence
+from typing import Any, AnyStr, Callable, Dict, List, Optional, Sequence
 
 import purpledrop.messages as messages
 import purpledrop.protobuf.messages_pb2 as messages_pb2
@@ -288,6 +288,24 @@ class PersistentPurpleDropDevice(PurpleDropDevice):
                 status = self.__try_to_connect()
             time.sleep(5.0)
 
+N_PINS = 128
+
+# Compute coefficients to convert integrated voltage to integrated charge
+# These values are nominal calculated values, not calibrated in any way
+# Divide by the voltage to get farads. 
+# First stage gain
+GAIN1 = 2.0
+# Integrator gain (Vout per integrated input V*s)
+GAIN2 = 25000.0
+# Output stage gain
+GAIN3 = 22.36
+# Sense resistances for high/low gain
+RLOW = 33.0
+RHIGH = 220.0
+CAPGAIN_HIGH = RHIGH * GAIN1 * GAIN2 * GAIN3 * 4096. / 3.3
+CAPGAIN_LOW = RLOW * GAIN1 * GAIN2 * GAIN3 * 4096. / 3.3
+
+
 class PurpleDropController(object):
     # Define the method names which will be made available via RPC server
     RPC_METHODS = [
@@ -309,7 +327,9 @@ class PurpleDropController(object):
         self.purpledrop = purpledrop
         self.board_definition = board_definition
         self.active_capacitance = 0.0
-        self.bulk_capacitance = []
+        self.raw_scan_capacitance = []
+        self.calibrated_scan_capacitance = []
+        self.scan_gains = [1.0] * N_PINS
         self.temperatures: Sequence[float] = []
         self.duty_cycles = {}
         self.hv_supply_voltage = 0.0
@@ -318,7 +338,7 @@ class PurpleDropController(object):
         self.event_listeners = []
         self.active_capacitance_counter = 0
         self.hv_regulator_counter = 0
-        self.pin_state = [False] * 128
+        self.pin_state = [False] * N_PINS
 
         def msg_filter(msg):
             desired_types = [
@@ -333,37 +353,70 @@ class PurpleDropController(object):
                 if isinstance(msg, t):
                     return True
             return False
-
+        
+        self.__set_scan_gains()
         self.listener = self.purpledrop.get_async_listener(self.__message_callback, msg_filter)
 
+    def __set_scan_gains(self):
+        """Setup low gain during scan for large electrodes
+        """
+        gains = [0] * N_PINS
+        self.scan_gains = [CAPGAIN_HIGH] * N_PINS
+        for pin in self.board_definition.oversized_electrodes:
+            gains[pin] = 1 # low gain
+            self.scan_gains[pin] = CAPGAIN_LOW
+
+        msg = messages.SetGainMsg()
+        msg.gains = gains
+        self.purpledrop.send_message(msg)
+
+    def __calibrate_capacitance(self, raw, gain):
+        # Can't measure capacitance unless high voltage is on
+        if self.hv_supply_voltage < 60.0:
+            return 0.0
+        # Return as pF
+        return raw * 1e12 / gain / self.hv_supply_voltage
+        
     def __message_callback(self, msg):
         if isinstance(msg, messages.ActiveCapacitanceMsg):
-            self.active_capacitance = msg.measurement - msg.baseline
+            # Active capacitance is always measured with high gain for now
+            self.active_capacitance = self.__calibrate_capacitance(msg.measurement - msg.baseline, CAPGAIN_HIGH)
             self.active_capacitance_counter += 1
             # Throttle the events. 500Hz messages is a lot for the browser to process.
             # This also means logs don't have a full resolution, and it would be better
             # if clients could choose what they get
             if (self.active_capacitance_counter % 50) == 0:
                 cap_event = messages_pb2.PurpleDropEvent()
-                cap_event.active_capacitance.measurement.capacitance = float(self.active_capacitance)
-                cap_event.active_capacitance.measurement.drop_present = False
+                cap_event.active_capacitance.baseline = msg.baseline
+                cap_event.active_capacitance.measurement = msg.measurement
+                cap_event.active_capacitance.calibrated = float(self.active_capacitance)
                 cap_event.active_capacitance.timestamp.CopyFrom(get_pb_timestamp())
                 self.__fire_event(cap_event)
 
         elif isinstance(msg, messages.BulkCapacitanceMsg):
-            if len(self.bulk_capacitance) < msg.start_index + msg.count:
-                self.bulk_capacitance.extend([0] * (msg.start_index + msg.count - len(self.bulk_capacitance)))
+            # Scan capacitance measurements are broken up into multiple messages
+            if len(self.raw_scan_capacitance) < msg.start_index + msg.count:
+                self.raw_scan_capacitance.extend([0] * (msg.start_index + msg.count - len(self.raw_scan_capacitance)))
+                self.calibrated_scan_capacitance.extend([0] * (msg.start_index + msg.count - len(self.calibrated_scan_capacitance)))
             for i in range(msg.count):
-                self.bulk_capacitance[msg.start_index + i] = msg.measurements[i]
-            bulk_event = messages_pb2.PurpleDropEvent()
-            def make_cap_measurement(raw):
-                m = messages_pb2.CapacitanceMeasurement()
-                m.capacitance = float(raw)
-                m.drop_present = raw > 50
-                return m
-            bulk_event.bulk_capacitance.measurements.extend([make_cap_measurement(x) for x in self.bulk_capacitance])
-            bulk_event.bulk_capacitance.timestamp.CopyFrom(get_pb_timestamp())
-            self.__fire_event(bulk_event)
+                chan = msg.start_index + i
+                gain = self.scan_gains[chan]
+                self.raw_scan_capacitance[chan] = msg.measurements[i]
+                self.calibrated_scan_capacitance[chan] = self.__calibrate_capacitance(msg.measurements[i], gain)
+            # Fire event on the last group
+            if msg.start_index + msg.count == 128:
+                bulk_event = messages_pb2.PurpleDropEvent()
+                def make_cap_measurement(raw, calibrated):
+                    m = messages_pb2.CapacitanceMeasurement()
+                    m.raw = float(raw)
+                    m.capacitance = float(calibrated)
+                    return m
+                bulk_event.scan_capacitance.measurements.extend(
+                    [make_cap_measurement(raw, cal) 
+                    for (raw, cal) in zip(self.raw_scan_capacitance, self.calibrated_scan_capacitance)]
+                )
+                bulk_event.scan_capacitance.timestamp.CopyFrom(get_pb_timestamp())
+                self.__fire_event(bulk_event)
 
         elif isinstance(msg, messages.HvRegulatorMsg):
             self.hv_regulator_counter += 1
@@ -482,10 +535,22 @@ class PurpleDropController(object):
     def get_bulk_capacitance(self) -> List[float]:
         """Get the most recent capacitance scan results
 
+        DEPRECATED. Use get_scan_capacitance.
+
         Arguments: None
         """
         logging.debug("Received get_bulk_capacitance")
-        return self.bulk_capacitance
+        return self.calibrated_scan_capacitance
+
+    def get_scan_capacitance(self) -> Dict[str, Any]:
+        """Get the most recent capacitance scan results
+
+        Arguments: None
+        """
+        return {
+            "raw": self.raw_scan_capacitance,
+            "calibrated": self.calibrated_scan_capacitance
+        }
 
     def get_active_capacitance(self) -> float:
         """Get the most recent active electrode capacitance
@@ -517,7 +582,7 @@ class PurpleDropController(object):
         logging.debug(f"Received set_electrode_pins({pins})")
         msg = ElectrodeEnableMsg()
         event = messages_pb2.PurpleDropEvent()
-        self.pin_state = [False] * 128
+        self.pin_state = [False] * N_PINS
 
         for p in pins:
             word = int(p / 8)

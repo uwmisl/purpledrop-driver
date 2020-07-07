@@ -25,10 +25,11 @@ message ElectrodeState {
 message CapacitanceMeasurement {
     float capacitance = 1;
     bool drop_present = 2;
+    float raw = 3;
 }
 
 // Capacitance measurements for all electrodes
-message BulkCapacitance {
+message ScanCapacitance {
     Timestamp timestamp = 1;
     repeated CapacitanceMeasurement measurements = 2;
 }
@@ -37,7 +38,9 @@ message BulkCapacitance {
 // a single quantity)
 message ActiveCapacitance {
     Timestamp timestamp = 1;
-    CapacitanceMeasurement measurement = 2;
+    float baseline = 3;
+    float measurement = 4;
+    float calibrated = 5;
 }
 
 message Image {
@@ -79,7 +82,7 @@ message PurpleDropEvent {
         Image image = 3;
         ImageTransform image_transform = 4;
         Settings settings = 5;
-        BulkCapacitance bulk_capacitance = 6;
+        ScanCapacitance scan_capacitance = 6;
         ActiveCapacitance active_capacitance = 7;
         HvRegulator hv_regulator = 8;
         TemperatureControl temperature_control = 9;

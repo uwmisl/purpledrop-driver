@@ -27,6 +27,7 @@ class Layout(object):
 class Board(object):
     def __init__(self, board_def: Dict[str, Any]):
         self.layout = Layout(board_def['layout'])
+        self.oversized_electrodes = board_def['oversized_electrodes']
 
     @staticmethod
     def load_from_file(filepath):
@@ -40,6 +41,7 @@ class Board(object):
     def as_dict(self) -> dict:
         return {
             'layout': self.layout.as_dict(),
+            'oversized_electrodes': self.oversized_electrodes,
         }
 
 def list_boards():
