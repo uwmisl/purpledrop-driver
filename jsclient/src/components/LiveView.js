@@ -120,7 +120,7 @@ class LiveView extends React.Component {
             let pinLoc = this.props.layout.findPinLocation(activePins[i]);
             let newLoc = [pinLoc[0] + dx, pinLoc[1] + dy];
             let pin = this.props.layout.getPinAtPos(newLoc[0], newLoc[1]);
-            if (pin) {
+            if (pin !== null) {
                 newPins.push(pin);
             } else {
                 // We ran off the regular grid, so we're going to refuse to move
