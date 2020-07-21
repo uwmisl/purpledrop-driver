@@ -205,13 +205,13 @@ class PurpleDropDevice():
         with self.lock:
             self.listeners.remove(listener)
 
-    def get_sync_listener(self, msg_filter=None):
+    def get_sync_listener(self, msg_filter=None) -> SyncListener:
         new_listener = SyncListener(owner=self, msg_filter=msg_filter)
         with self.lock:
             self.listeners.append(new_listener.get_msg_handler())
         return new_listener
 
-    def get_async_listener(self, callback, msg_filter=None):
+    def get_async_listener(self, callback, msg_filter=None) -> AsyncListener:
         new_listener = AsyncListener(owner=self, callback=callback, msg_filter=msg_filter)
         with self.lock:
             self.listeners.append(new_listener.get_msg_handler())
