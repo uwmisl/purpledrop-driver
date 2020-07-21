@@ -163,7 +163,7 @@ class SetGainMsg(PurpleDropMessage):
 
     def to_bytes(self):
         # Store a count byte, and then 2 bits per gain
-        data = [len(self.gains)]
+        data = [self.ID, len(self.gains)]
         counter = 0
 
         for g in self.gains:
