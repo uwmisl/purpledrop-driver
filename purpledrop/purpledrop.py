@@ -177,9 +177,13 @@ class PurpleDropDevice():
         self._ser = None
         self.lock = threading.Lock()
         self.listeners = []
+        self.__connected_callbacks: List[Callable] = []
 
         if port is not None:
             self.open(port)
+
+    def register_connected_callback(self, callback: Callable):
+        self.__connected_callbacks.append(callback)
 
     def open(self, port):
         self.close() # close any opened ports
@@ -187,6 +191,8 @@ class PurpleDropDevice():
         self._ser = serial.Serial(port, timeout=0.01, write_timeout=0.5)
         self._rx_thread = PurpleDropRxThread(self._ser, callback=self.message_callback)
         self._rx_thread.start()
+        for cb in self.__connected_callbacks:
+            cb()
 
     def close(self):
         logger.debug("Closing PurpleDropDevice")
@@ -355,8 +361,14 @@ class PurpleDropController(object):
                     return True
             return False
         
-        self.__set_scan_gains()
+        self.purpledrop.register_connected_callback(self.__on_connected)
+        if self.purpledrop.connected():
+            self.__on_connected()
+
         self.listener = self.purpledrop.get_async_listener(self.__message_callback, msg_filter)
+
+    def __on_connected(self):
+        self.__set_scan_gains()
 
     def __set_scan_gains(self):
         """Setup low gain during scan for large electrodes
