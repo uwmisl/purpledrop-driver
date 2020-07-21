@@ -314,6 +314,7 @@ class PurpleDropController(object):
         'get_parameter',
         'set_parameter',
         'get_bulk_capacitance',
+        'get_scan_capacitance',
         'get_active_capacitance',
         'set_electrode_pins',
         'get_electrode_pins',
