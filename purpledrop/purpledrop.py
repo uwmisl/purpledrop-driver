@@ -368,7 +368,12 @@ class PurpleDropController(object):
 
         msg = messages.SetGainMsg()
         msg.gains = gains
+        listener = self.purpledrop.get_sync_listener(messages.CommandAckMsg)
         self.purpledrop.send_message(msg)
+        ack = listener.wait(timeout=1.0)
+        if ack is None:
+            logger.error("Got no ACK for SetGains message")
+
 
     def __calibrate_capacitance(self, raw, gain):
         # Can't measure capacitance unless high voltage is on
