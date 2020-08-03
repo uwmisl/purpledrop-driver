@@ -403,7 +403,7 @@ class PurpleDropController(object):
             # Throttle the events. 500Hz messages is a lot for the browser to process.
             # This also means logs don't have a full resolution, and it would be better
             # if clients could choose what they get
-            if (self.active_capacitance_counter % 50) == 0:
+            if (self.active_capacitance_counter % 1) == 0:
                 cap_event = messages_pb2.PurpleDropEvent()
                 cap_event.active_capacitance.baseline = msg.baseline
                 cap_event.active_capacitance.measurement = msg.measurement
