@@ -77,7 +77,7 @@ class Rectangle(object):
                 locs.append((x + self.location.x, y + self.location.y))
         return locs
 
-def move_drop(purpledrop, start, size, direction):
+def move_drop(purpledrop, start, size, direction, post_capture_time=0.25):
     initial_rect = Rectangle(Location(start), size)
     final_rect = initial_rect.move_one(direction)
 
@@ -136,7 +136,9 @@ def move_drop(purpledrop, start, size, direction):
     cap_series = []
     t = 0.0
     start_time = time.time()
-    while True:
+    end_time = start_time + MOVE_TIMEOUT
+    detected = False
+    while time.time() < end_time:
         msg = wait_for(messages.ActiveCapacitanceMsg, 0.5)
         if msg is None:
             raise RuntimeError("Timed out waiting for capacitance message")
@@ -146,10 +148,10 @@ def move_drop(purpledrop, start, size, direction):
         # For now, just assume the samples are periodic at 2ms to create a time vector
         # At some point, they should come with their own timestamps
         t += 2e-3
-        if x >= MOVE_THRESHOLD:
-            break
-        if time.time() - start_time > MOVE_TIMEOUT:
-            break
+        if x >= MOVE_THRESHOLD and not detected:
+            # keep capturing for a while longer after hitting the target threshold
+            end_time = time.time() + post_capture_time
+            detected = True
 
     post_capacitance = cap_series[-1]
 
