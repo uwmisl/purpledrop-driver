@@ -1,34 +1,72 @@
 import json
 import os
 import pkg_resources
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 
+def load_peripheral(pdata, templates=None):
+
+    if not 'type' in pdata:
+        raise ValueError("Peripheral definition requires a type field")
+
+    template = None
+    if templates is not None and pdata['type'] in templates:
+        template = templates[pdata['type']]
+    
+    periph = pdata
+
+    # Override electrodes with fields from template
+    def map_electrode(e):
+        eid = e['id']
+        if template is None:
+            return e
+        e_template = next((x for x in template['electrodes'] if x['id'] == eid), None)
+        if e_template is None:
+            return e
+        # Merge dicts, with values in e taking priority in case of duplicate keys
+        return {**e_template, **e}
+
+    periph['electrodes'] = [map_electrode(e) for e in periph['electrodes']]
+
+    return periph
+    
 class Layout(object):
     def __init__(self, layout_def: Dict[str, Any]):
+        self.peripherals = None
+        self.grid = []
         # Replace -1 with None
         for row in layout_def['grid']:
-            for i, pin in enumerate(row):
-                if pin == -1:
-                    row[i] = None
-        
-        self.layout = layout_def
+            new_row: List[Optional[int]] = []
+            
+            for pin in row:
+                if pin == -1 or pin is None:
+                    new_row.append(None)
+                else:
+                    new_row.append(int(pin))
+
+            self.grid.append(new_row)    
+
+        if 'peripherals' in layout_def:
+            self.peripherals = [load_peripheral(p, layout_def.get('peripheral_templates', None)) for p in layout_def['peripherals']]
 
     def grid_location_to_pin(self, x, y):
         """Return the pin number at given grid location, or None if no pin is 
         defined there.
         """
-        if y < 0 or y >= len(self.layout['grid']):
+        if y < 0 or y >= len(self.grid):
             return None
-        row = self.layout['grid'][y]
+        row = self.grid[y]
         if x < 0 or x >= len(row):
             return None
-        return self.layout['grid'][y][x]
+        return self.grid[y][x]
 
     def as_dict(self) -> dict:
         """Return a serializable dict version of the board definition
         """
-        return self.layout
+        return {
+            "grid": self.grid,
+            "peripherals": self.peripherals
+        }
 
 class Board(object):
     def __init__(self, board_def: Dict[str, Any]):
