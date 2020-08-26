@@ -6,6 +6,12 @@ from typing import Any, Dict
 
 class Layout(object):
     def __init__(self, layout_def: Dict[str, Any]):
+        # Replace -1 with None
+        for row in layout_def['grid']:
+            for i, pin in enumerate(row):
+                if pin == -1:
+                    row[i] = None
+        
         self.layout = layout_def
 
     def grid_location_to_pin(self, x, y):
