@@ -27,7 +27,7 @@ class Layout(object):
 class Board(object):
     def __init__(self, board_def: Dict[str, Any]):
         self.layout = Layout(board_def['layout'])
-        self.oversized_electrodes = board_def['oversized_electrodes']
+        self.oversized_electrodes = board_def.get('oversized_electrodes', [])
 
     @staticmethod
     def load_from_file(filepath):
