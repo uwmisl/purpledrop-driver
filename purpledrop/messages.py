@@ -1,5 +1,5 @@
 import struct
-from typing import Optional, Sequence, Type
+from typing import Optional, Sequence, Type, Union
 
 class PurpleDropMessage(object):
     @classmethod
@@ -78,6 +78,28 @@ class BulkCapacitanceMsg(PurpleDropMessage):
             raise ValueError(f"Not enough data for BulkCapacitanceMsg with count {self.count}")
         self.measurements = struct.unpack_from("<" + "H" * self.count, buf, 3)
 
+class CalibrateCommandMsg(PurpleDropMessage):
+    ID = 13
+
+    CAP_OFFSET_CMD = 0
+
+    def __init__(self, fill_data: Optional[bytes]=None):
+        self.command: Optional[int] = None
+        if fill_data is not None:
+            self.fill(fill_data)
+
+    @staticmethod
+    def predictSize(buf: bytes) -> int:
+        return 2
+
+    def fill(self, fill_data: bytes):
+        if len(fill_data) < 2:
+            raise ValueError("Need at least 2 bytes to parse a CalibrateCommandMsg")
+        self.command = int(fill_data[1])
+    
+    def to_bytes(self) -> bytes:
+        return struct.pack("<BB", self.ID, self.command)
+
 class CommandAckMsg(PurpleDropMessage):
     ID = 4
 
@@ -150,6 +172,49 @@ class ElectrodeEnableMsg(PurpleDropMessage):
     def to_bytes(self):
         return struct.pack("<B" + "B" * len(self.values),
             *([self.ID] + self.values))
+
+class ParameterDescriptorMsg(PurpleDropMessage):
+    ID = 12
+
+    def __init__(self, fill_data: Optional[bytes]=None):
+        self.param_id: Optional[int] = None
+        self.value: Optional[Union[float, int]] = None
+        self.sequence_number: Optional[int] = None
+        self.sequence_total: Optional[int] = None
+        self.name: Optional[str] = None
+        self.description: Optional[str] = None
+        self.type: Optional[str] = None
+
+        if fill_data is not None:
+            self.fill(fill_data)
+    
+    @staticmethod
+    def predictSize(buf: bytes) -> int:
+        if len(buf) < 3:
+            return 0
+        str_size = struct.unpack_from("<H", buf, 1)[0]
+        return str_size + 15
+
+    def fill(self, fill_data: bytes):
+        str_size, self.param_id = struct.unpack_from("<HI", fill_data, 1)
+        str_section = fill_data[15:]
+        separators = [i for i, b in enumerate(str_section) if b == 0]
+        if len(separators) != 2:
+            raise ValueError(f"Expected two string separators in ParameterDescriptorMsg, found {len(separators)}")
+        self.name = str_section[0:separators[0]].decode('utf-8')
+        self.description = str_section[separators[0]+1:separators[1]].decode('utf-8')
+        self.type = str_section[separators[1]+1:].decode('utf-8')
+
+        if self.type == 'float':
+            self.value = struct.unpack_from("<f", fill_data, 7)[0]
+        else:
+            self.value = struct.unpack_from("<i", fill_data, 7)[0]
+        
+        self.sequence_number, self.sequence_total = struct.unpack_from("<HH", fill_data, 11)
+
+    def to_bytes(self) -> bytes:
+        # Send request message
+        return struct.pack("<B", self.ID)
 
 class SetGainMsg(PurpleDropMessage):
     ID = 11

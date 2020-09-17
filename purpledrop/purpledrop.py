@@ -32,38 +32,6 @@ def list_purpledrop_devices():
     devices = [x for x in devices if x.vid == 0x02dd and x.pid == 0x7da3]
     return devices
 
-def parameter_list():
-    """Return the config parameters for the embedded software
-
-    This should be configurable eventually. Or better yet come from the device.
-    """
-    def make_param(id, name, description, type="int"):
-        if not isinstance(id, int) or type not in ["int", "float", "bool"]:
-            raise ValueError(f"Invalid param: {id}: {name} {type}")
-        return {
-                "id": id,
-                "name": name,
-                "description": description,
-                "type": type,
-            }
-
-    return [
-        make_param(10, "HV Control Enabled", "Enable feedback control", "bool"),
-        make_param(11, "HV Voltage Setting", "High voltage regulator output setting in volts", "float"),
-        make_param(12, "HV Target Out", "V target out when regulator is disabled (counts, 0-4095)"),
-        make_param(13, "HV Enable Flyback", "", "bool"),
-        make_param(14, "HV Flyback Width", "us"),
-        make_param(15, "HV Flyback Period", "ns"),
-        make_param(20, "Scan Sync Pin", "Set timing of the capacitance scan sync to given electrode"),
-        make_param(21, "Scan Start Delay", "ns, Settling time before first scan measurement"),
-        make_param(22, "Scan Blank Delay", "ns, Settling time after each scan measurement"),
-        make_param(23, "Sample Delay", "ns, Time between first and second integrator sample"),
-        make_param(24, "Blanking Delay", "ns, Time between blank and integrator reset for active measure"),
-        make_param(25, "Integrator Reset Delay", "ns, Time between reset release and first sample"),
-        make_param(26, "Augment Top Plate Low Side", "Enable the extra FET to pulldown GND", "bool"),
-        make_param(30, "Top Plate Pin", "Pin number of HV507 output driving top plate"),
-    ]
-
 def get_pb_timestamp():
     """Get a protobuf timestamp for the current system time
     """
@@ -331,6 +299,7 @@ class PurpleDropController(object):
         'get_temperatures',
         'set_pwm_duty_cycle',
         'get_hv_supply_voltage',
+        'calibrate_capacitance_offset',
     ]
 
     def __init__(self, purpledrop, board_definition):
@@ -343,7 +312,7 @@ class PurpleDropController(object):
         self.temperatures: Sequence[float] = []
         self.duty_cycles = {}
         self.hv_supply_voltage = 0.0
-        self.parameter_list = parameter_list()
+        self.parameter_list = []
         self.lock = threading.Lock()
         self.event_listeners = []
         self.active_capacitance_counter = 0
@@ -364,14 +333,37 @@ class PurpleDropController(object):
                     return True
             return False
         
-        self.purpledrop.register_connected_callback(self.__on_connected)
         if self.purpledrop.connected():
             self.__on_connected()
+        self.purpledrop.register_connected_callback(self.__on_connected)
+        
 
         self.listener = self.purpledrop.get_async_listener(self.__message_callback, msg_filter)
 
     def __on_connected(self):
         self.__set_scan_gains()
+        self.__get_parameter_descriptors()
+
+    def __get_parameter_descriptors(self):
+        """Request and receive the list of parameters from device 
+        """
+        listener = self.purpledrop.get_sync_listener(messages.ParameterDescriptorMsg)
+        self.purpledrop.send_message(messages.ParameterDescriptorMsg())
+        descriptors = []
+        while True:
+            msg = listener.wait(timeout=1.0)
+            if msg is None:
+                logger.error("Timed out waiting for parameter descriptors")
+                break
+            descriptors.append({
+                'id': msg.param_id,
+                'name': msg.name,
+                'description': msg.description,
+                'type': msg.type,
+            })
+            if msg.sequence_number == msg.sequence_total - 1:
+                break
+        self.parameter_list = descriptors
 
     def __set_scan_gains(self):
         """Setup low gain during scan for large electrodes
@@ -389,7 +381,6 @@ class PurpleDropController(object):
         ack = listener.wait(timeout=1.0)
         if ack is None:
             logger.error("Got no ACK for SetGains message")
-
 
     def __calibrate_capacitance(self, raw, gain):
         # Can't measure capacitance unless high voltage is on
@@ -660,3 +651,14 @@ class PurpleDropController(object):
         """
         logging.debug("Received get_hv_supply_voltage")
         return self.hv_supply_voltage
+
+    def calibrate_capacitance_offset(self):
+        """Request a calibration of the capacitance measurement zero offset
+
+        Arguments: None
+
+        Returns: None
+        """
+        msg = messages.CalibrateCommandMsg()
+        msg.command = messages.CalibrateCommandMsg.CAP_OFFSET_CMD
+        self.purpledrop.send_message(msg)
