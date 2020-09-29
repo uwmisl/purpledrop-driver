@@ -20,6 +20,7 @@ import LiveView from './components/LiveView';
 import ParameterList from './components/ParameterList';
 import Preloader from './components/Preloader';
 import Stats from './components/Stats';
+import Usage from './components/Usage';
 
 import mislLogo from './images/misl-logo.svg';
 import uwLogo from './images/uw-logo.png';
@@ -218,6 +219,8 @@ class App extends React.Component {
     };
     this.openParamModal = this.openParamModal.bind(this);
     this.closeParamModal = this.closeParamModal.bind(this);
+    this.openHelpModal = this.openHelpModal.bind(this);
+    this.closeHelpModal = this.closeHelpModal.bind(this);
     this.onParameterChange = this.onParameterChange.bind(this);
     this.onParameterSave = this.onParameterSave.bind(this);
     this.onParameterRefresh = this.onParameterRefresh.bind(this);
@@ -229,6 +232,14 @@ class App extends React.Component {
 
   componentWillUnmount() {
     this.state_handle.disconnect();
+  }
+
+  openHelpModal() {
+    this.setState({helpModalOpen: true});
+  }
+
+  closeHelpModal() {
+    this.setState({helpModalOpen: false});
   }
 
   openParamModal() {
@@ -264,15 +275,25 @@ class App extends React.Component {
   render() {
     const paramModalStyles = {
       content : {
-        top                   : '50%',
-        left                  : '50%',
-        right                 : 'auto',
-        bottom                : 'auto',
-        marginRight           : '-50%',
-        transform             : 'translate(-50%, -50%)',
+        top: '50%',
+        left: '50%',
+        right: 'auto',
+        bottom: 'auto',
+        marginRight: '-50%',
+        transform: 'translate(-50%, -50%)',
       },
     };
 
+    const helpModalStyles = {
+      content : {
+        top: '50%',
+        left: '50%',
+        right: 'auto',
+        bottom: 'auto',
+        marginRight: '-50%',
+        transform: 'translate(-50%, -50%)',
+      },
+    };
 
     if(!this.state.layout) {
       return <div>
@@ -319,6 +340,14 @@ class App extends React.Component {
                   </div>
 
               </Modal>
+              <Modal
+                isOpen={this.state.helpModalOpen}
+                onRequestClose={this.closeHelpModal}
+                contentLabel="Help"
+                style={helpModalStyles}
+              >
+                <Usage />
+              </Modal>
               <div className="page-layout" style={{display: "flex", flexDirection: "column", alignItems: "center"}}>
                 <div className='logobanner'>
                     <div><img className='uw-logo' src={uwLogo} /></div>
@@ -330,15 +359,7 @@ class App extends React.Component {
                   </div>
                   <div><h1 style={{textAlign: "center"}}>Purple Drop Dashboard</h1></div>
                   <div style={{display: 'flex',  alignItems: 'center'}}><a href="#"
-                      onClick={() => {
-                          // openModal({
-                          //     title: '',
-                          //     content: usage,
-                          //     buttons: [
-                          //         {id: 'close', text: 'Close'},
-                          //     ],
-                          //});
-                      }}>Help</a>
+                      onClick={this.openHelpModal}>Help</a>
                   </div>
                 </div>
 
