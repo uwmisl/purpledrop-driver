@@ -64,7 +64,7 @@ class CapacitanceDisplay extends React.Component {
         measurement = Math.round(capacitance.capacitance*100)/100;
         raw = capacitance.raw;
       }
-      message = `Pin ${this.state.mouseOverPin}: ${measurement} (${raw})`;
+      message = `Pin ${this.state.mouseOverPin}: ${measurement} pF (${raw} counts)`;
     }
 
     const flexContainerStyle = {
