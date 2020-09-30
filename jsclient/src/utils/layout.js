@@ -1,3 +1,5 @@
+import area from 'area-polygon';
+
 function rotate(center, points, angle) {
   angle = angle * Math.PI / 180.0;
   let s = Math.sin(angle);
@@ -15,8 +17,17 @@ class Layout {
     this.grid = layout.grid;
     this.peripherals = layout.peripherals;
     this.memoized_polygons = null;
-  }
+    this.electrode_areas = {};
 
+    // Precompute peripheral pad areas
+    this.peripherals.forEach((periph) => {
+      periph.electrodes.forEach((electrode) => {
+        let A = area(electrode.polygon);
+        this.electrode_areas[electrode.pin] = A;
+      })
+    });
+  }
+  
   electrode_polygons() {
     if(!this.memoized_polygons) {
       let polygons = [];
@@ -76,6 +87,12 @@ class Layout {
       });
     });
     return {minX: minX, maxX: maxX, minY: minY, maxY: maxY};
+  }
+
+  getPinArea(pin) {
+    // Regular electrodes have unit area; the exceptions are special peripheral 
+    // electrodes which have a polygon used to compute the area
+    return this.electrode_areas[pin] || 1.0;
   }
 
   getPinAtPos(x, y) {

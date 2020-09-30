@@ -3,9 +3,9 @@ import { SizeMe } from 'react-sizeme';
 import PropTypes from 'prop-types';
 import ElectrodeSvg from './ElectrodeSvg';
 import colormap from 'colormap';
+import Slider from '@material-ui/core/Slider';
 
 import './CapacitanceDisplay.css';
-
 
 function getDisplaySize(size, electrodeAspectRatio) {
   const containerAspect = size.width / size.height;
@@ -24,7 +24,11 @@ class CapacitanceDisplay extends React.Component {
     super(props);
     this.onMouseOver = this.onMouseOver.bind(this);
     this.onMouseOut = this.onMouseOut.bind(this);
-    this.state = {mouseOverPin: null};
+    this.onColorMaxChange = this.onColorMaxChange.bind(this);
+    this.state = {
+      mouseOverPin: null,
+      colorMax: 10.0,
+    };
     this.colormap = colormap({
         colormap: 'jet',
         nshades: 16,
@@ -41,19 +45,24 @@ class CapacitanceDisplay extends React.Component {
     this.setState({mouseOverPin: null});
   }
 
+  onColorMaxChange(event, newValue) {
+    this.setState({colorMax: newValue});
+  }
+
   render() {
-    const NormMax = 100;
+    let layout = this.props.layout;
+    let extent = layout.extent();
+    let normMax = this.state.colorMax;
     let styleMap = {};
     for(var i=0; i<this.props.capacitance.length; i++) {
       let cap = this.props.capacitance[i];
-      if(cap.capacitance > 1) {
-        let colorIdx = Math.min(this.colormap.length-1, Math.floor(cap.capacitance * this.colormap.length / NormMax));
+      let A = layout.getPinArea(i);
+      if(cap.capacitance > normMax / 100) {
+        let colorIdx = Math.min(this.colormap.length-1, Math.floor(cap.capacitance * this.colormap.length / normMax / A));
         styleMap[i] = {fill: this.colormap[colorIdx]};
       }
     }
 
-    let layout = this.props.layout;
-    let extent = layout.extent();
     let electrodeAspectRatio = (extent.maxX - extent.minX) / (extent.maxY - extent.minY);
     let message = "Mouse-over for electrode capacitance";
     if(this.state.mouseOverPin) {
@@ -66,6 +75,11 @@ class CapacitanceDisplay extends React.Component {
       }
       message = `Pin ${this.state.mouseOverPin}: ${measurement} pF (${raw} counts)`;
     }
+
+    const colorMaxDivStyles = {
+      margin: '10px',
+      display: 'flex',
+    };
 
     const flexContainerStyle = {
       display: "flex",
@@ -101,6 +115,16 @@ class CapacitanceDisplay extends React.Component {
           }}
         </SizeMe>
       </div>
+      <div id="color-max-slider" style={colorMaxDivStyles}>
+        
+        <div style={{width:"100%"}}>
+          <Slider defaultValue={this.state.colorMax} onChange={this.onColorMaxChange} />
+        </div>
+        <div style={{marginLeft: '10px'}}>
+          Color max: {this.state.colorMax}pF
+        </div>
+
+      </div>
       <div id='capacitance-message-box' style={{textAlign: 'center'}}>
           <span>{message}</span>
       </div>
@@ -113,6 +137,7 @@ CapacitanceDisplay.propTypes = {
   layout: PropTypes.object,
   height: PropTypes.number,
   width: PropTypes.number,
+  colorMax: PropTypes.number,
 };
 
 export default CapacitanceDisplay;
