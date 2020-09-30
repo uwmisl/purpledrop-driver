@@ -4,22 +4,25 @@ const Dotenv = require('dotenv-webpack');
 const paths = require('./paths');
 const apiMocker = require('mocker-api');
 const path = require('path');
+const httpProxy = require('http-proxy');
+
+pdserverHost = process.env.PDSERVER_HOST;
 
 module.exports = {
     mode: 'development',
     devtool: 'cheap-module-source-map',
     devServer: {
+        after: function() {
+            httpProxy.createServer({
+                target: `ws://${pdserverHost}:7001`,
+                ws: true
+            }).listen(7001);      
+        },
         hot: true,
         contentBase: paths.outputPath,
         port: 3000,
         proxy: {
-            //'/rpc': 'http://localhost:8000',
-            //'/rpc': 'http://10.144.112.21:7000',
-            '/rpc': 'http://192.168.0.2:7000',
-            // '/ws': {
-            //     target: 'ws://10.144.112.21:7001/',
-            //     pathRewrite: {'^/ws': ''}
-            // }
+            '/rpc': `http://${pdserverHost}:7000`,
         },
         open: true,
         /*overlay: {

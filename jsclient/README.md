@@ -20,8 +20,8 @@ To build the distribution bundle:
 
 `yarn build`
 
-To run the development server locally:
+To run the development server locally, pointing at a running instance of pdserver backend:
 
-`yarn start`
+`PDSERVER_HOST=<address of pdserver> yarn start`
 
 
