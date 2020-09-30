@@ -149,6 +149,7 @@ class PurpleDropDevice():
         self.lock = threading.Lock()
         self.listeners = []
         self.__connected_callbacks: List[Callable] = []
+        self.__disconnected_callbacks: List[Callable] = []
 
         if port is not None:
             self.open(port)
@@ -156,8 +157,10 @@ class PurpleDropDevice():
     def register_connected_callback(self, callback: Callable):
         self.__connected_callbacks.append(callback)
 
+    def register_disconnected_callback(self, callback: Callable):
+        self.__disconnected_callbacks.append(callback)
+
     def open(self, port):
-        self.close() # close any opened ports
         logger.debug(f"PurpleDropDevice: opening {port}")
         self._ser = serial.Serial(port, timeout=0.01, write_timeout=0.5)
         self._rx_thread = PurpleDropRxThread(self._ser, callback=self.message_callback)
@@ -172,6 +175,8 @@ class PurpleDropDevice():
             self._rx_thread.join()
         if self._ser is not None:
             self._ser.close()
+            for cb in self.__disconnected_callbacks:
+                cb()
 
     def connected(self):
         return self._ser is not None and \
@@ -215,7 +220,7 @@ class PersistentPurpleDropDevice(PurpleDropDevice):
     def __init__(self, serial_number: Optional[str]=None):
         super().__init__()
         self.target_serial_number: Optional[str] = serial_number
-        self.device_info: Optional[Any]
+        self.device_info: Optional[Any] = None
         self.__thread = threading.Thread(
             name="PersistentPurpleDropDevice Monitor",
             target=self.__thread_entry,
@@ -248,8 +253,8 @@ class PersistentPurpleDropDevice(PurpleDropDevice):
             logger.warn(f"Found purpledrop, but not connecting because it has unexpected serial number ({serial_numbers}")
             return False
 
-        self.open(selected_device.device)
         self.device_info = selected_device
+        self.open(selected_device.device)
         logger.warning(f"Connected to purpledrop {selected_device.serial_number} on {selected_device.device}")
         return True
 
@@ -260,6 +265,7 @@ class PersistentPurpleDropDevice(PurpleDropDevice):
                 if status:
                     logger.warning("Closing purpledrop device")
                     self.close()
+                    self.device_info = None
                     status = False
                 logger.debug("Attempting to connect to purpledrop")
                 status = self.__try_to_connect()
@@ -300,6 +306,7 @@ class PurpleDropController(object):
         'set_pwm_duty_cycle',
         'get_hv_supply_voltage',
         'calibrate_capacitance_offset',
+        'get_device_info',
     ]
 
     def __init__(self, purpledrop, board_definition):
@@ -336,13 +343,27 @@ class PurpleDropController(object):
         if self.purpledrop.connected():
             self.__on_connected()
         self.purpledrop.register_connected_callback(self.__on_connected)
-        
+        self.purpledrop.register_disconnected_callback(self.__on_disconnected)
 
         self.listener = self.purpledrop.get_async_listener(self.__message_callback, msg_filter)
 
     def __on_connected(self):
         self.__set_scan_gains()
         self.__get_parameter_descriptors()
+        self.__send_device_info_event(
+            True, 
+            self.purpledrop.connected_serial_number() or '',
+            self.get_software_version() or ''
+        )
+    def __on_disconnected(self):
+        self.__send_device_info_event(False, '', '')
+
+    def __send_device_info_event(self, connected: bool, serial_number: str, software_version: str):
+        event = messages_pb2.PurpleDropEvent()
+        event.device_info.connected = connected
+        event.device_info.serial_number = serial_number
+        event.device_info.software_version = software_version
+        self.__fire_event(event)
 
     def __get_parameter_descriptors(self):
         """Request and receive the list of parameters from device 
@@ -461,6 +482,19 @@ class PurpleDropController(object):
             if p['id'] == id:
                 return p
         return None
+
+    def get_software_version(self) -> Optional[str]:
+        listener = self.purpledrop.get_sync_listener(msg_filter=messages.DataBlobMsg)
+        versionRequest = messages.DataBlobMsg()
+        versionRequest.blob_id = messages.DataBlobMsg.SOFTWARE_VERSION_ID
+        self.purpledrop.send_message(versionRequest)
+        msg = listener.wait(0.5)
+        if msg is None:
+            software_version = None
+            logger.warning("Timed out requesting software version")
+        else:
+            software_version = msg.payload.decode('utf-8')
+        return software_version
 
     def register_event_listener(self, func):
         """Register a callback for state update events
@@ -662,3 +696,28 @@ class PurpleDropController(object):
         msg = messages.CalibrateCommandMsg()
         msg.command = messages.CalibrateCommandMsg.CAP_OFFSET_CMD
         self.purpledrop.send_message(msg)
+
+    def get_device_info(self):
+        """Gets information about the connected purpledrop device
+
+        Arguments: None
+
+        Returns: Object with the following fields: 
+          - connected: boolean indicating if a device is currently connected
+          - serial_number: The serial number of the connected device
+          - software_version: The software version string of the connected device
+        """
+        serial_number = self.purpledrop.connected_serial_number()
+        if serial_number is None:
+            return {
+                'connected': False,
+                'serial_number': '',
+                'software_version': ''
+            }
+        else:
+            software_version = self.get_software_version()
+            return {
+                'connected': True,
+                'serial_number': serial_number,
+                'software_version': software_version
+            }

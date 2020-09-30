@@ -75,6 +75,12 @@ message TemperatureControl {
     Timestamp timestamp = 3;
 }
 
+message DeviceInfo {
+    bool connected = 1;
+    string serial_number = 2;
+    string software_version = 3;
+}
+
 message PurpleDropEvent {
     oneof msg {
         ElectrodeLayout electrode_layout = 1;
@@ -86,5 +92,6 @@ message PurpleDropEvent {
         ActiveCapacitance active_capacitance = 7;
         HvRegulator hv_regulator = 8;
         TemperatureControl temperature_control = 9;
+        DeviceInfo device_info = 10;
     }
 }

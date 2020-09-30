@@ -25,6 +25,9 @@ export function PdRpc() {
     getBoardDefinition() {
         return rpc.call('get_board_definition');
     },
+    getDeviceInfo() {
+        return rpc.call('get_device_info');
+    },
     getParameterDefinitions() {
         return rpc.call('get_parameter_definitions');
     },

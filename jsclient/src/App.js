@@ -5,8 +5,10 @@ import {
   Switch,
   Route,
 } from 'react-router-dom';
+import ReactTooltip from 'react-tooltip';
 import Modal from 'react-modal';
 import GridLayout, {WidthProvider} from 'react-grid-layout';
+import { Info, ReportProblem } from '@material-ui/icons';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
@@ -112,6 +114,14 @@ function hookup_remote_state(app) {
       });
     } else if(event.temperatureControl) {
       stateWrapper.setStatePassive({temperatures: event.temperatureControl.temperatures});
+    } else if(event.deviceInfo) {
+      stateWrapper.setState({
+        device_info: {
+          connected: event.deviceInfo.connected,
+          serial_number: event.deviceInfo.serialNumber,
+          software_version: event.deviceInfo.softwareVersion,
+        },
+      });
     }
   }
 
@@ -134,6 +144,11 @@ function hookup_remote_state(app) {
     }
     app.setState({
       parameters: paramValues,
+    });
+  });
+  pdrpc.getDeviceInfo().then((resp) => {
+    app.setState({
+      device_info: resp,
     });
   });
 
@@ -216,6 +231,11 @@ class App extends React.Component {
       paramModalOpen: false,
       parameters: {},
       parameterDirtyMap:{},
+      device_info: {
+        connected: false,
+        serial_number: null,
+        software_version: null,
+      },
     };
     this.openParamModal = this.openParamModal.bind(this);
     this.closeParamModal = this.closeParamModal.bind(this);
@@ -228,6 +248,10 @@ class App extends React.Component {
 
   componentDidMount() {
     this.state_handle = hookup_remote_state(this);
+  }
+
+  componentDidUpdate() {
+    ReactTooltip.rebuild();
   }
 
   componentWillUnmount() {
@@ -273,6 +297,16 @@ class App extends React.Component {
   }
 
   render() {
+    const statusContent = () => {
+      if(this.state.device_info.connected) {
+        let tipString = `Serial: ${this.state.device_info.serial_number}<br />`;
+        tipString += `Software: ${this.state.device_info.software_version}`;
+        return <p>Device Status: Connected<span data-for="tooltip" data-tip={tipString}><Info style={{ color: 'green' }}/></span></p>
+      } else {
+        return <p>Device Status: Disconnected <ReportProblem style={{ color: 'red' }} /></p>;
+      }
+    }
+
     const paramModalStyles = {
       content : {
         top: '50%',
@@ -348,6 +382,7 @@ class App extends React.Component {
               >
                 <Usage />
               </Modal>
+              <ReactTooltip id="tooltip" multiline={true} />
               <div className="page-layout" style={{display: "flex", flexDirection: "column", alignItems: "center"}}>
                 <div className='logobanner'>
                     <div><img className='uw-logo' src={uwLogo} /></div>
@@ -363,6 +398,9 @@ class App extends React.Component {
                   </div>
                 </div>
 
+                </div>
+                <div style={{textAlign: 'center'}}>
+                  {statusContent()}
                 </div>
                 <div style={{position: "relative"}}>
                   <WrappedGridLayout
