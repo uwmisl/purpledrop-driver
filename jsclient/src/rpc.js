@@ -42,6 +42,10 @@ export function PdRpc() {
         // electrode outputs 4, 2, and 100 while disabling all others.
         return rpc.call('set_electrode_pins', [pins]);
     },
+    calibrateCapacitanceOffset() {
+        console.log("Recalibrate");
+        return rpc.call('calibrate_capacitance_offset');
+    },
   };
 
   return obj;

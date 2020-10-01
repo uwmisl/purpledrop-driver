@@ -17,6 +17,7 @@ import PdSocket from 'pdsocket';
 import Layout from './utils/layout';
 
 import CapacitanceDisplay from './components/CapacitanceDisplay';
+import ControlPanel from './components/ControlPanel';
 import DraggableBox from './components/DraggableBox';
 import LiveView from './components/LiveView';
 import ParameterList from './components/ParameterList';
@@ -28,6 +29,10 @@ import mislLogo from './images/misl-logo.svg';
 import uwLogo from './images/uw-logo.png';
 
 Modal.setAppElement('#root');
+
+// Generally, the UI makes no assumptions about what parameters exist, but in
+// order to provide an easy power button via a parameter this exception is made.
+const HV_ENABLE_PARAM_ID = 10;
 
 // Create a wrapper for the app with setState and setStatePassive
 // methods to ease up on the render calls. The event stream sends
@@ -192,6 +197,7 @@ let persistedLayout = {
     {i: 'Live View', x: 2, y: 0, w: 10, h: 15},
     {i: 'Capacitance', x:12, y:0, w: 5, h: 7},
     {i: 'Stats', x: 12, y:6, w:4,  h:4},
+    {i: 'Control', x: 0, y:0, w: 2, h:2},
   ],
   layout: [],
   load() {
@@ -244,6 +250,7 @@ class App extends React.Component {
     this.onParameterChange = this.onParameterChange.bind(this);
     this.onParameterSave = this.onParameterSave.bind(this);
     this.onParameterRefresh = this.onParameterRefresh.bind(this);
+    this.onHvEnabledChange = this.onHvEnabledChange.bind(this);
   }
 
   componentDidMount() {
@@ -296,16 +303,22 @@ class App extends React.Component {
     return this.state_handle.refreshParameters();
   }
 
+  onHvEnabledChange(enable) {
+    let parameters = this.state.parameters;
+    parameters[HV_ENABLE_PARAM_ID] = enable ? 1 : 0;
+    this.state_handle.setParameter(HV_ENABLE_PARAM_ID, parameters[HV_ENABLE_PARAM_ID]);
+  }
+
   render() {
     const statusContent = () => {
       if(this.state.device_info.connected) {
         let tipString = `Serial: ${this.state.device_info.serial_number}<br />`;
         tipString += `Software: ${this.state.device_info.software_version}`;
-        return <p>Device Status: Connected<span data-for="tooltip" data-tip={tipString}><Info style={{ color: 'green' }}/></span></p>
+        return <p>Device Status: Connected<span data-for="tooltip" data-tip={tipString}><Info style={{ color: 'green' }}/></span></p>;
       } else {
         return <p>Device Status: Disconnected <ReportProblem style={{ color: 'red' }} /></p>;
       }
-    }
+    };
 
     const paramModalStyles = {
       content : {
@@ -436,6 +449,16 @@ class App extends React.Component {
                     <div key='Stats'>
                       <DraggableBox title='Stats'>
                         <Stats voltage={this.state.voltage} temperatures={this.state.temperatures} />
+                      </DraggableBox>
+                    </div>
+
+                    <div key='Control'>
+                      <DraggableBox title='Control Panel'>
+                        <ControlPanel 
+                          hvEnabled={this.state.parameters[HV_ENABLE_PARAM_ID] == 0 ? false : true}
+                          onHvEnabledChange={this.onHvEnabledChange}
+                          onCalibrateCapacitance={this.state.pdrpc.calibrateCapacitanceOffset}
+                        />
                       </DraggableBox>
                     </div>
                   </WrappedGridLayout>

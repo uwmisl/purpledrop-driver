@@ -70,6 +70,7 @@
     "react-resizable": "^1.10.1",
     "react-router-dom": "^5.2.0",
     "react-sizeme": "^2.6.12",
+    "react-switch": "^5.0.1",
     "react-tooltip": "^4.2.10",
     "regenerator-runtime": "^0.13.3",
     "simple-jsonrpc-js": "^1.0.1"
