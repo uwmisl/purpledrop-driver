@@ -17,6 +17,7 @@ let DraggableBox = (props) => {
 
   const contentsStyles = {
     flexGrow: 1,
+    overflow: 'hidden',
   };
 
   return <div style={wrapperStyles} key={props.title}>
