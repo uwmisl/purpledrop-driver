@@ -24,7 +24,7 @@ class Layout {
       periph.electrodes.forEach((electrode) => {
         let A = area(electrode.polygon);
         this.electrode_areas[electrode.pin] = A;
-      })
+      });
     });
   }
   

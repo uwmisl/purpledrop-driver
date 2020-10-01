@@ -18,13 +18,13 @@ class Stats extends React.Component {
 }
 
 Stats.defaultProps = {
-  voltage: 120.0,
   temperatures: [0.0, 0.0, 0.0, 0.0],
+  voltage: 0.0,
 };
 
 Stats.propTypes = {
-  voltage: PropTypes.number,
   temperatures: PropTypes.arrayOf(PropTypes.number),
+  voltage: PropTypes.number,
 };
 
 export default Stats;

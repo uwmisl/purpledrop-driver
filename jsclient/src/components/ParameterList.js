@@ -60,7 +60,7 @@ ParameterList.propTypes = {
     description: PropTypes.string,
     type: PropTypes.oneOf(["float", "int", "bool"]),
   })),
-  parameters: PropTypes.arrayOf(PropTypes.number),
+  parameters: PropTypes.object,
   parameterDirtyMap: PropTypes.object,
   onRefresh: PropTypes.func,
   onSave: PropTypes.func,

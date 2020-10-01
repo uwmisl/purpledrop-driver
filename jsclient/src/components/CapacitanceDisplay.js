@@ -19,6 +19,8 @@ function getDisplaySize(size, electrodeAspectRatio) {
   return {width: displayWidth, height: displayHeight};
 }
 
+const DEFAULT_COLOR_MAX = 10.0;
+
 class CapacitanceDisplay extends React.Component {
   constructor(props) {
     super(props);
@@ -27,7 +29,7 @@ class CapacitanceDisplay extends React.Component {
     this.onColorMaxChange = this.onColorMaxChange.bind(this);
     this.state = {
       mouseOverPin: null,
-      colorMax: 10.0,
+      colorMax: DEFAULT_COLOR_MAX,
     };
     this.colormap = colormap({
         colormap: 'jet',
@@ -57,7 +59,7 @@ class CapacitanceDisplay extends React.Component {
     for(var i=0; i<this.props.capacitance.length; i++) {
       let cap = this.props.capacitance[i];
       let A = layout.getPinArea(i);
-      if(cap.capacitance > normMax / 100) {
+      if(cap.capacitance > normMax / 50) {
         let colorIdx = Math.min(this.colormap.length-1, Math.floor(cap.capacitance * this.colormap.length / normMax / A));
         styleMap[i] = {fill: this.colormap[colorIdx]};
       }
@@ -118,7 +120,7 @@ class CapacitanceDisplay extends React.Component {
       <div id="color-max-slider" style={colorMaxDivStyles}>
         
         <div style={{width:"100%"}}>
-          <Slider defaultValue={this.state.colorMax} onChange={this.onColorMaxChange} />
+          <Slider defaultValue={DEFAULT_COLOR_MAX} onChange={this.onColorMaxChange} />
         </div>
         <div style={{marginLeft: '10px'}}>
           Color max: {this.state.colorMax}pF
