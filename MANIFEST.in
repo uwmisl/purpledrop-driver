@@ -1,0 +1,2 @@
+include versioneer.py
+include purpledrop/_version.py
