@@ -1,0 +1,83 @@
+{
+    "layout": {
+        "grid": [
+            [14, 15, 11, 16, 17, 111, 110, 96, 112, 113],
+            [8, 9, 10, 19, 18, 109, 108, 95, 115, 117],
+            [5, 6, 23, 21, 20, 107, 106, 90, 118, 119], 
+            [3, 4, 7, 24, 22, 104, 105, 93, 120, 121], 
+            [1, 2, 35, 26, 25, 102, 103, 66, 122, 123], 
+            [63, 0, 36, 28, 27, 100, 101, 67, 124, 125], 
+            [61, 62, 37, 30, 29, 98, 99, 69, 126, 127], 
+            [59, 60, 38, 32, 31, 91, 92, 70, 64, 65], 
+            [55, 58, 39, 34, 33, 83, 74, 82, 72, 71], 
+            [null, null, null, null, 40, 76, null, null, null, null], 
+            [null, null, null, null, 41, 77, null, null, null, null], 
+            [null, null, null, null, 54, 78, null, null, null, null], 
+            [null, null, null, null, 53, 79, null, null, null, null]
+        ],
+        "peripheral_templates": {
+            "reservoirC": {
+                "electrodes": [
+                    {
+                        "id": "A",
+                        "polygon": [[0.5, -0.5], [-0.5, -0.5], [-0.5, -2], [4.0, -2], [4.0, 2], [-0.5, 2], [-0.5, 0.5], [0.5, 0.5]],
+                        "origin": [1.0, 0.00]
+                    },
+                    {
+                        "id": "B",
+                        "polygon": [[-0.5, -0.5], [1.5, -0.5], [1.5, 0.5], [-0.5, 0.5]],
+                        "origin": [0.0, 0.0]
+                    }
+                ]
+            }
+        },
+        "peripherals": [
+            {
+                "class": "reservoir",
+                "type": "reservoirC",
+                "id": 1,
+                "origin": [-0.5, 0.5],
+                "rotation": 180.0,
+                "electrodes": [
+                    { "id": "A", "pin": 12 },
+                    { "id": "B", "pin": 13 }
+                ]
+            },
+            {
+                "class": "reservoir",
+                "type": "reservoirC",
+                "id": 2,
+                "origin": [-0.5, 8.5],
+                "rotation": 180.0,
+                "electrodes": [
+                    { "id": "A", "pin": 56 },
+                    { "id": "B", "pin": 57 }
+                ]
+            },
+            {
+                "class": "reservoir",
+                "type": "reservoirC",
+                "id": 3,
+                "origin": [10.5, 0.5],
+                "rotation": 0.0,
+                "electrodes": [
+                    { "id": "A", "pin": 116 },
+                    { "id": "B", "pin": 114 }
+                ]
+            },
+            {
+                "class": "reservoir",
+                "type": "reservoirC",
+                "id": 4,
+                "origin": [10.5, 8.5],
+                "rotation": 0.0,
+                "electrodes": [
+                    { "id": "A", "pin": 75 },
+                    { "id": "B", "pin": 73 }
+                ]
+            }            
+
+        ]
+    },
+    "oversized_electrodes": [12, 56, 116, 75]
+}
