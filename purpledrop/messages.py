@@ -96,7 +96,7 @@ class CalibrateCommandMsg(PurpleDropMessage):
         if len(fill_data) < 2:
             raise ValueError("Need at least 2 bytes to parse a CalibrateCommandMsg")
         self.command = int(fill_data[1])
-    
+
     def to_bytes(self) -> bytes:
         return struct.pack("<BB", self.ID, self.command)
 
@@ -173,6 +173,65 @@ class ElectrodeEnableMsg(PurpleDropMessage):
         return struct.pack("<B" + "B" * len(self.values),
             *([self.ID] + self.values))
 
+class GpioControlMsg(PurpleDropMessage):
+    ID = 14
+
+    VALUE_FLAG = 1
+    OUTPUT_FLAG = 2
+    READ_FLAG = 128
+
+    def __init__(self, fill_data: Optional[bytes]=None):
+        self.pin = 0
+        self.flags = 0
+        if fill_data is not None:
+            self.fill(fill_data)
+
+    @staticmethod
+    def predictSize(buf: bytes) -> int:
+        return 3
+
+    def fill(self, fill_data: bytes):
+        if len(fill_data) < 3:
+            raise ValueError("Need at least 3 bytes for a GpioControlMsg")
+        self.pin = fill_data[1]
+        self.flags = fill_data[2]
+
+    def to_bytes(self) -> bytes:
+        return struct.pack("<BBB", self.ID, self.pin, self.flags)
+
+    @property
+    def value(self):
+        return (self.flags & self.VALUE_FLAG) != 0
+
+    @value.setter
+    def value(self, value):
+        if value:
+            self.flags |= self.VALUE_FLAG
+        else:
+            self.flags &= ~self.VALUE_FLAG
+
+    @property
+    def output_enable(self):
+        return (self.flags & self.OUTPUT_FLAG) != 0
+
+    @output_enable.setter
+    def output_enable(self, value):
+        if value:
+            self.flags |= self.OUTPUT_FLAG
+        else:
+            self.flags &= ~self.OUTPUT_FLAG
+
+    @property
+    def read(self):
+        return (self.flags & self.READ_FLAG) != 0
+
+    @read.setter
+    def read(self, value):
+        if value:
+            self.flags |= self.READ_FLAG
+        else:
+            self.flags &= ~self.READ_FLAG
+
 class ParameterDescriptorMsg(PurpleDropMessage):
     ID = 12
 
@@ -187,7 +246,7 @@ class ParameterDescriptorMsg(PurpleDropMessage):
 
         if fill_data is not None:
             self.fill(fill_data)
-    
+
     @staticmethod
     def predictSize(buf: bytes) -> int:
         if len(buf) < 3:
@@ -209,7 +268,7 @@ class ParameterDescriptorMsg(PurpleDropMessage):
             self.value = struct.unpack_from("<f", fill_data, 7)[0]
         else:
             self.value = struct.unpack_from("<i", fill_data, 7)[0]
-        
+
         self.sequence_number, self.sequence_total = struct.unpack_from("<HH", fill_data, 11)
 
     def to_bytes(self) -> bytes:
@@ -236,7 +295,7 @@ class SetGainMsg(PurpleDropMessage):
                 data.append(0)
             data[-1] |= (g & 0x3) << (counter * 2)
             counter = (counter + 1) % 4
-        
+
         return bytes(data)
 
 class SetParameterMsg(PurpleDropMessage):

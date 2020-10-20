@@ -307,6 +307,8 @@ class PurpleDropController(object):
         'get_hv_supply_voltage',
         'calibrate_capacitance_offset',
         'get_device_info',
+        'read_gpio',
+        'write_gpio',
     ]
 
     def __init__(self, purpledrop, board_definition):
@@ -721,3 +723,50 @@ class PurpleDropController(object):
                 'serial_number': serial_number,
                 'software_version': software_version
             }
+
+    def read_gpio(self, gpio_num):
+        """Reads the current input value of a GPIO pin
+
+        Arguments:
+          - gpio_num:  The ID of the GPIO to read
+
+        Returns: A bool
+        """
+        msg = messages.GpioControlMsg()
+
+        msg.pin = gpio_num
+        msg.read = True
+
+        listener = self.purpledrop.get_sync_listener(msg_filter=messages.GpioControlMsg)
+        self.purpledrop.send_message(msg)
+        rxmsg  = listener.wait(0.5)
+        if rxmsg is None:
+            raise TimeoutError("No response from purpledrop to GPIO read request")
+        else:
+            return rxmsg.value
+
+    def write_gpio(self, gpio_num, value, output_enable):
+        """Set the output state of a GPIO pin
+
+        Arguments:
+          - gpio_num: The ID of the GPIO to set
+          - value: The output value (boolean)
+          - output_enable: Set the GPIO as an output (true) or input (false)
+
+        Returns:
+          - The value read on the GPIO (bool)
+        """
+        msg = messages.GpioControlMsg()
+
+        msg.pin = gpio_num
+        msg.read = False
+        msg.value = value
+        msg.output_enable = output_enable
+
+        listener = self.purpledrop.get_sync_listener(msg_filter=messages.GpioControlMsg)
+        self.purpledrop.send_message(msg)
+        rxmsg  = listener.wait(0.5)
+        if rxmsg is None:
+            raise TimeoutError("No response from purpledrop to GPIO read request")
+        else:
+            return rxmsg.value
