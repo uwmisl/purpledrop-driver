@@ -5,13 +5,23 @@ import time
 
 from picamera import PiCamera
 
-from pdcam.grid import find_grid_transform
-from pdcam.plotting import mark_fiducial, mark_template
+from purpledrop.pdcam.image_registration import find_grid_transform
+from purpledrop.pdcam.plotting import mark_fiducial, mark_template
 
 class AsyncGridLocate(object):
-    def __init__(self, grid_reference, callback=None, timeout_frames=3):
+    def __init__(self, grid_registration=None, callback=None, timeout_frames=3):
+        """A background thread for processing images to find fiducials, and 
+        transform to map pixel coordinates to electrode board grid coordinates
+
+        Args:
+            grid_registration: Optional `Registration` object. If provided, 
+            this overrides any registration found in the electrode board 
+            database
+            callback: Function, taking two args (transform, fiducials) to be 
+            called on each processed image
+        """
         self.callback = callback
-        self.grid_reference = grid_reference
+        self.grid_registration = grid_registration
         self.timeout_frames = timeout_frames
         self.fail_count = 0
         self.pending_image = None
@@ -32,6 +42,8 @@ class AsyncGridLocate(object):
             self.cv.notify()
 
     def latest(self):
+        """Return latest completed results
+        """
         with self.cv:
             transform, fiducials = self.latest_result
 
@@ -46,7 +58,7 @@ class AsyncGridLocate(object):
 
             # Now we've got the image, and cleared pending image,
             # we can release the lock and do the processing
-            transform, fiducials = find_grid_transform(self.grid_reference, img)
+            transform, fiducials = find_grid_transform(img, self.grid_registration)
 
             with self.cv:
                 if transform is not None:
@@ -65,14 +77,14 @@ class Video(object):
     """Video capture process
 
     Launches background threads to continuously capture frames from raspberry PI
-    camera (MMAL API) and process them to locate QR codes.
+    camera (MMAL API) and process them to locate april tag fiducials
     """
 
     WIDTH = 1024
     HEIGHT = 768
     NBUFFER = 3
     PROCESS_PERIOD = 0.5
-    def __init__(self, grid_reference, grid_layout, flip=False):
+    def __init__(self, grid_registration, grid_layout, flip=False):
         self.frame_number = 0
         self.grid_layout = grid_layout
         self.frames = [np.empty((self.WIDTH * self.HEIGHT * 3,), dtype=np.uint8) for _ in range(self.NBUFFER)]
@@ -83,10 +95,7 @@ class Video(object):
         self.last_process_time = 0.0
         self.flip = flip
 
-        if grid_reference is not None:
-            self.grid_finder = AsyncGridLocate(grid_reference)
-        else:
-            self.grid_finder = None
+        self.grid_finder = AsyncGridLocate(grid_registration)
         self.capture_thread = threading.Thread(target=self.capture_thread_entry)
         self.capture_thread.daemon = True
         self.capture_thread.start()
@@ -103,9 +112,9 @@ class Video(object):
             gains = camera.awb_gains
             camera.awb_mode = 'off'
             camera.awb_gains = gains
-            print(f"AWB Gains: {gains} {camera.awb_gains}")
-            print(f"ISO: {camera.iso}")
-            print(f"exposure: {camera.shutter_speed}")
+            # print(f"AWB Gains: {gains} {camera.awb_gains}")
+            # print(f"ISO: {camera.iso}")
+            # print(f"exposure: {camera.shutter_speed}")
             while True:
                 next_buffer = (self.active_buffer + 1) % self.NBUFFER
                 with self.frame_locks[next_buffer]:
@@ -149,13 +158,15 @@ class Video(object):
         return np.dot(transform, scale)
 
     def markup(self, image):
+        """Make a copy of image with fiducial and electrodes overlayed
+        """
         # Make a copy so we don't modify the original np array
         image = image.copy()
         transform, fiducials = self.grid_finder.latest()
         for f in fiducials:
             mark_fiducial(image, f.corners)
 
-        if transform is not None:
+        if transform is not None and self.grid_layout is not None:
             mark_template(image, self.grid_layout, transform)
 
         return image

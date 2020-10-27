@@ -4,11 +4,9 @@ import json
 import matplotlib.pyplot as plt
 from pyzbar.pyzbar import decode
 
-from pdcam.grid import find_fiducials, find_grid_transform, GridReference
-from pdcam.plotting import mark_fiducial, plot_template
-
-
-# TODO: Read this from config file or lookup in database based on QR code content
+from purpledrop.pdcam.image_registration import find_fiducials, find_grid_transform
+from purpledrop.pdcam.plotting import mark_fiducial, plot_template
+from purpledrop.electrode_board import Registration, load_board
 
 ELECTRODE_LAYOUT_v3 = [
   [ None, None, None, None, None, None,  None,  None, None, 113, 113],
@@ -75,28 +73,47 @@ ELECTRODE_LAYOUT_v5 = [
 ]
 CONTROL_ELECTRODES_v5 = [(1, 0), (1, 5), (20, 0), (20, 5)]
 
-
 @click.group()
 def main():
     pass
 
+def load_registration(filepath):
+    """Load a registration from a JSON file
+     
+    If the top level object contains a 'registration' attribute, this will
+    be loaded. Othewise, the top-level attribute is assumed to contain the 
+    registration data
+    """
+    with open(filepath, 'r') as f:
+        data = json.loads(f.read())
+        if 'registration' in data:
+            data = data['registration']
+        registration = Registration.from_dict(data)
+
 @main.command()
-@click.option('--reference', required=False)
-@click.option('--v4', is_flag=True, default=False)
+@click.option('--registration', required=False, help="Provide a fiducial registration file to override board definition")
+@click.option('--board', required=False, help="Force usage of a particular electrode board (overrides auto detection)")
 @click.option('--flip', is_flag=True, default=False)
-def server(reference, v4, flip):
-    from pdcam.server import create_app
+def server(registration, board, flip):
+    from purpledrop.pdcam.server import create_app
 
-    electrode_layout = ELECTRODE_LAYOUT_v3
-    if v4:
-        electrode_layout = ELECTRODE_LAYOUT_v4
+    board_name = board
+    if board_name is not None:
+        board = load_board(board_name)
+        if board is None:
+            raise ValueError(f"No board found with name {board_name}")
 
-    if reference is not None:
-        with open(reference) as f:
-            reference = GridReference.from_dict(json.loads(f.read()))
+    if registration is not None:
+        registration = load_registration(registration)
+    elif board is not None:
+        registration = board.registration
+
+    if board is None:
+        layout = None
     else:
-        reference = GridReference([], [])
-    app = create_app(reference, electrode_layout, flip)
+        layout = board.layout
+
+    app = create_app(registration, layout, flip)
     app.run(host="0.0.0.0")
 
 @main.command()
@@ -132,6 +149,12 @@ def overlay(reference, imagefile):
 @click.option('--v4_1', is_flag=True, default=False)
 @click.option('--v5', is_flag=True, default=False)
 def measure(imagefile, outfile, v4, v4_1, v5):
+    """Launch UI to make calibration measurements from image
+    """
+
+    # TODO: Instead of hardcoding the layouts, load the electrode layout from
+    # board definition files (e.g. with --board option), and auto compute a 
+    # good set of control electrodes
     img = cv2.cvtColor(cv2.imread(imagefile), cv2.COLOR_BGR2RGB)
 
     fiducials = find_fiducials(img)
@@ -150,7 +173,6 @@ def measure(imagefile, outfile, v4, v4_1, v5):
     elif v5: 
         electrode_layout = ELECTRODE_LAYOUT_v5
         control_electrodes = CONTROL_ELECTRODES_v5
-
 
     alignment_electrodes = control_electrodes
     fig = plt.figure()
@@ -200,7 +222,7 @@ def measure(imagefile, outfile, v4, v4_1, v5):
 
     data = {
         'fiducials': [f.to_dict() for f in fiducials],
-        'electrodes': [ {"grid": n, "image": p} for n,p in zip(alignment_electrodes, alignment_points) ]
+        'control_points': [ {"grid": n, "image": p} for n,p in zip(alignment_electrodes, alignment_points) ]
     }
 
     print("Storing reference data to %s" % outfile)
