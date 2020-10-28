@@ -18,6 +18,12 @@ from .move_drop import move_drop, MoveDropResult
 
 logger = logging.getLogger("purpledrop")
 
+# List of USB VID/PID pairs which will be recognized as a purpledrop
+PURPLEDROP_VIDPIDS = [
+    (0x02dd, 0x7da3),
+    (0x1209, 0xCCAA),
+]
+
 def resolve_msg_filter(filt):
     """If the filter provided is a message type, then create a filter which returns
     any message of that type. Otherwise, assume the filter is a lambda method.
@@ -27,10 +33,15 @@ def resolve_msg_filter(filt):
     else:
         return filt
 
-def list_purpledrop_devices():
+def list_purpledrop_devices() -> List[serial.tools.list_ports_common.ListPortInfo]:
+    """Get a list of detected purpledrop devices
+
+    Returns:
+        A list of `ListPortInfo` objects
+    """
     devices = serial.tools.list_ports.comports()
-    devices = [x for x in devices if x.vid == 0x02dd and x.pid == 0x7da3]
-    return devices
+    selected_devices = [x for x in devices if (x.vid, x.pid) in PURPLEDROP_VIDPIDS]
+    return selected_devices
 
 def get_pb_timestamp():
     """Get a protobuf timestamp for the current system time
