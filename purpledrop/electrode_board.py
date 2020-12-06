@@ -1,7 +1,8 @@
 import json
 import os
 import pkg_resources
-from typing import Any, Dict, List, Optional
+import re
+from typing import Any, AnyStr, Dict, List, Optional, Tuple
 
 
 def load_peripheral(pdata, templates=None):
@@ -29,7 +30,49 @@ def load_peripheral(pdata, templates=None):
     periph['electrodes'] = [map_electrode(e) for e in periph['electrodes']]
 
     return periph
+
+class Fiducial(object):
+    def __init__(self, corners: List[List[int]], label: str=""):
+        self.corners = corners
+        self.label = label
     
+    @staticmethod
+    def from_dict(data):
+        return Fiducial(**data)
+
+    def to_dict(self):
+        return {
+            'corners': self.corners,
+            'label': self.label
+        }
+
+class ControlPoint(object):
+    def __init__(self, grid_coord: Tuple[float, float], image_coord: Tuple[float, float]):
+        self.grid = grid_coord
+        self.image = image_coord
+
+    def from_dict(data):
+        if not 'grid' in data:
+            raise ValueError(f'A control point must have a `grid` and `image` attribute: {data}')
+        if not 'image' in data:
+            raise ValueError(f'A control point must have a `grid` and `image` attribute: {data}')
+
+        return ControlPoint(data['grid'], data['image'])
+
+class Registration(object):
+    def __init__(self, data: dict):
+        if not 'fiducials' in data:
+            raise ValueError(f'A Registration requires a fiducials attribute, not found in: {data}')
+        if not 'control_points' in data:
+            raise ValueError(f'A Registration requires a control points attribute, not found in: {data}')
+        if not isinstance(data['fiducials'], list):
+            raise ValueError(f'A Registration `fiducial` attribute must be a list: {data}')
+        if not isinstance(data['control_points'], list):
+            raise ValueError(f'a Registration `control_points` attribute must be a list: {data}')
+
+        self.fiducials = [Fiducial.from_dict(f) for f in data['fiducials']]
+        self.control_points = [ControlPoint.from_dict(cp) for cp in data['control_points']]
+
 class Layout(object):
     def __init__(self, layout_def: Dict[str, Any]):
         self.peripherals = None
@@ -69,9 +112,14 @@ class Layout(object):
         }
 
 class Board(object):
+    """Represents top-level object in an electrode board definition file
+    """
     def __init__(self, board_def: Dict[str, Any]):
+        self.registration: Optional[Registration] = None
         self.layout = Layout(board_def['layout'])
         self.oversized_electrodes = board_def.get('oversized_electrodes', [])
+        if 'registration' in board_def:
+            self.registration = Registration(board_def['registration'])
 
     @staticmethod
     def load_from_file(filepath):
@@ -79,7 +127,8 @@ class Board(object):
             data = json.loads(f.read())
             return Board(data)
 
-    def load_from_string(data):
+    @staticmethod
+    def load_from_string(data: AnyStr) -> 'Board':
         return Board(json.loads(data))
 
     def as_dict(self) -> dict:
@@ -89,11 +138,35 @@ class Board(object):
         }
 
 def list_boards():
-    """Return a list of board definitions available
-    """
-    raise RuntimeError("Not implemented")
+    """Find all available board definitions. 
 
-def load_board(name):
+    Uses same search rules as load_board; see :func:`load_board`. 
+
+    Returns: 
+        A list of board names, which can be passed to `load_board`
+    """
+    config_dir = os.path.expanduser("~/.config/purpledrop/boards")
+    package_files = pkg_resources.resource_listdir('purpledrop', 'boards')
+    if os.path.isdir(config_dir):
+        config_files = os.listdir(config_dir)
+    else:
+        config_files = []
+    
+    board_names = []
+    def add_files(files):
+        for f in files:
+            print(f"Checking {f}")
+            match = re.match(r'(.+).json', os.path.basename(f))
+            if match:
+                board_names.append(match.group(1))
+
+    # Config files take priority, if there are any duplicates
+    add_files(package_files)
+    add_files(config_files)
+    
+    return board_names
+
+def load_board(name) -> Optional[Board]:
     """Load a board definition by name or path
 
     Attempt to load a board definition from the name, using the following 
