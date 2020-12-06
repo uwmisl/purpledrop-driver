@@ -32,7 +32,7 @@ def main(verbose, board_file, replay_file):
 
     board = load_board(board_file)
     if board is None:
-        print("Could not load board definition for {board_file}")
+        print(f"Could not load board definition for {board_file}")
         sys.exit(1)
 
     video_client = None

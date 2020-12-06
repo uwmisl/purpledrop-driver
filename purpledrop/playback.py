@@ -130,6 +130,15 @@ class EventReader(object):
     def current_offset(self):
         return self.fd.tell()
 
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        msg = self.next()
+        if msg is None:
+            raise StopIteration()
+        return msg
+
     def next(self):
         """Consume a message from the stream and return it
         """

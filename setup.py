@@ -12,6 +12,7 @@ setup(
             'pdcli=purpledrop.script.pd_cli:main',
             'pdserver=purpledrop.script.pd_server:main',
             'pdrecord=purpledrop.script.pd_record:main',
+            'pdlog=purpledrop.script.pd_log:main',
         ],
     },
     install_requires=[
