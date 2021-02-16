@@ -1,6 +1,7 @@
 """Low-level driver for communicating with PurpleDrop via serial messages
 """
 import inspect
+import fnmatch
 import logging
 import queue
 import serial
@@ -18,11 +19,22 @@ from .move_drop import move_drop, MoveDropResult
 
 logger = logging.getLogger("purpledrop")
 
+# Versions of purpledrop software supported by this driver
+SUPPORTED_VERSIONS = [
+    "v0.4.*",
+]
+
 # List of USB VID/PID pairs which will be recognized as a purpledrop
 PURPLEDROP_VIDPIDS = [
     (0x02dd, 0x7da3),
     (0x1209, 0xCCAA),
 ]
+
+def validate_version(v):
+    for pattern in SUPPORTED_VERSIONS:
+        if fnmatch.fnmatch(v, pattern):
+            return True
+    return False
 
 def resolve_msg_filter(filt):
     """If the filter provided is a message type, then create a filter which returns
@@ -363,11 +375,17 @@ class PurpleDropController(object):
     def __on_connected(self):
         self.__set_scan_gains()
         self.__get_parameter_descriptors()
+        software_version = self.get_software_version()
+        if not validate_version(software_version):
+            logger.error(f"Unsupported software version '{software_version}'. This driver may not" + \
+                "work correcly, and you should upgrade your purpledrop firmware to one of the following: " +  \
+                    f"{SUPPORTED_VERSIONS}")
         self.__send_device_info_event(
             True, 
             self.purpledrop.connected_serial_number() or '',
-            self.get_software_version() or ''
+            software_version or ''
         )
+
     def __on_disconnected(self):
         self.__send_device_info_event(False, '', '')
 
