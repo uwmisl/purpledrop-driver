@@ -184,17 +184,31 @@ class DutyCycleUpdatedMsg(PurpleDropMessage):
 class FeedbackCommandMsg(PurpleDropMessage):
     ID = 16
 
+    # Modes
+    DISABLED = 0
+    NORMAL = 1
+    DIFFERENTIAL = 2
+
     def __init__(self, fill_data: Optional[bytes]=None):
         if(fill_data):
             raise RuntimeError("Receiving FeedbackCommandMsg unimplemented")
         else:
-            self.target_capacitance = 0.0
-            self.input_groups_mask = 0
-            self.output_group = 0
-            self.enable = 0
+            self.target = 0.0
+            self.mode = 0
+            self.input_groups_p_mask = 0
+            self.input_groups_n_mask = 0
+            self.baseline = 0
 
     def to_bytes(self) -> bytes:
-        return struct.pack("<BfBBB", self.ID, self.target_capacitance, self.input_groups_mask, self.output_group, self.enable)
+        return struct.pack(
+            "<BfBBBB",
+            self.ID,
+            self.target,
+            self.mode,
+            self.input_groups_p_mask,
+            self.input_groups_n_mask,
+            self.baseline
+        )
 
 class ElectrodeEnableMsg(PurpleDropMessage):
     ID = 0

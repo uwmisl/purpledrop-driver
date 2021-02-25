@@ -840,12 +840,30 @@ class PurpleDropController(object):
         # Send event with new state
         self.__fire_pinstate_event()
 
-    def set_feedback_command(self, target_capacitance, input_groups_mask, output_group, enable):
+    def set_feedback_command(self, target, mode, input_groups_p_mask, input_groups_n_mask, baseline):
+        """Update feedback control settings
+
+        When enabled, the purpledrop controller will adjust the duty cycle of
+        electrode drive groups based on capacitance measurements.
+
+        Arguments:
+            - target: The controller target in counts
+            - mode:
+                - 0: Disabled
+                - 1: Normal
+                - 2: Differential
+            - input_groups_p_mask: Bit mask indicating which capacitance groups to 
+              sum for positive input (e.g. for groups 0 and 2: 5)
+            - input_groups_n_mask: Bit mask for negative input groups (used in differential mode)
+            - baseline: The duty cycle to apply to both drive groups when no error signal is 
+              present (0-255)
+        """
         msg = messages.FeedbackCommandMsg()
-        msg.target_capacitance = target_capacitance
-        msg.input_groups_mask = input_groups_mask
-        msg.output_group = output_group
-        msg.enable = enable
+        msg.target = target
+        msg.mode = mode
+        msg.input_groups_p_mask = input_groups_p_mask
+        msg.input_groups_n_mask = input_groups_n_mask
+        msg.baseline = baseline
         self.purpledrop.send_message(msg)
 
     def move_drop(self,
