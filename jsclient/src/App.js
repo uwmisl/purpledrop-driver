@@ -73,8 +73,13 @@ function hookup_remote_state(app) {
 
   function handle_event(event) {
     if (event.electrodeState) {
+      // There are two groups of drive electrodes, A and B, used mostly for feedback controlled drop splitting. 
+      // For display purposes here, they are just OR'd together so both groups are highlighted
+      let electrodeState = event.electrodeState.driveGroups[0].electrodes.map((elem, i) => {
+        return elem || event.electrodeState.driveGroups[1].electrodes[i];
+      });
       stateWrapper.setState({
-        electrodeState: event.electrodeState.electrodes,
+        electrodeState: electrodeState,
       });
     }
     else if(event.image) {

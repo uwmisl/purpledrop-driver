@@ -30,6 +30,23 @@ PURPLEDROP_VIDPIDS = [
     (0x1209, 0xCCAA),
 ]
 
+def pinlist2bool(pins):
+    pin_state = [False] * N_PINS
+
+    for p in pins:
+        if(p >= N_PINS):
+            raise ValueError(f"Pin {p} is invalid. Must be < {N_PINS}")
+        pin_state[p] = True
+    return pin_state
+
+def pinlist2mask(pins):
+    mask = [0] * int(((N_PINS + 7) / 8))
+    for p in pins:
+        word = int(p / 8)
+        bit = p % 8
+        mask[word] |= (1<<bit)
+    return mask
+
 def validate_version(v):
     for pattern in SUPPORTED_VERSIONS:
         if fnmatch.fnmatch(v, pattern):
@@ -295,6 +312,7 @@ class PersistentPurpleDropDevice(PurpleDropDevice):
             time.sleep(5.0)
 
 N_PINS = 128
+N_MASK_BYTES = 16
 
 # Compute coefficients to convert integrated voltage to integrated charge
 # These values are nominal calculated values, not calibrated in any way
@@ -311,6 +329,59 @@ RHIGH = 220.0
 CAPGAIN_HIGH = RHIGH * GAIN1 * GAIN2 * GAIN3 * 4096. / 3.3
 CAPGAIN_LOW = RLOW * GAIN1 * GAIN2 * GAIN3 * 4096. / 3.3
 
+class PinState(object):
+    """Data record to store the state of purpledrop pin setting, including 
+    active pins and capacitance scan groups
+    """
+    N_DRIVE_GROUPS = 2
+    N_SCAN_GROUPS = 5
+
+    class PinGroup(object):
+        def __init__(self, pin_mask: Sequence[int], setting: int):
+            self.pin_mask = pin_mask
+            self.setting = setting
+
+    class DriveGroup(PinGroup):
+        def __init__(self, pin_mask=None, duty_cycle=255):
+            if pin_mask is None:
+                pin_mask = pinlist2bool([])
+            super().__init__(pin_mask, duty_cycle)
+
+        @property
+        def duty_cycle(self):
+            return self.setting
+
+        @duty_cycle.setter
+        def duty_cycle(self, dc):
+            self.setting = dc
+
+        def to_dict(self):
+            return {
+                'pins': self.pin_mask,
+                'duty_cycle': self.duty_cycle,
+            }
+
+    class ScanGroup(PinGroup):
+        def __init__(self, pin_mask=None, setting=0):
+            if pin_mask is None:
+                pin_mask = pinlist2bool([])
+            super().__init__(pin_mask, setting)
+
+        def to_dict(self):
+            return {
+                'pins': self.pin_mask,
+                'setting': self.setting,
+            }
+
+    def __init__(self):
+        self.drive_groups = [self.DriveGroup() for _ in range(self.N_DRIVE_GROUPS)]
+        self.scan_groups = [self.ScanGroup() for _ in range(self.N_SCAN_GROUPS)]
+
+    def to_dict(self):
+        return {
+            'drive_groups': [x.to_dict() for x in self.drive_groups],
+            'scan_groups': [x.to_dict() for x in self.scan_groups],
+        }
 
 class PurpleDropController(object):
     # Define the method names which will be made available via RPC server
@@ -321,9 +392,12 @@ class PurpleDropController(object):
         'set_parameter',
         'get_bulk_capacitance',
         'get_scan_capacitance',
+        'get_group_capacitance',
         'get_active_capacitance',
+        'set_capacitance_group',
         'set_electrode_pins',
         'get_electrode_pins',
+        'set_feedback_command',
         'move_drop',
         'get_temperatures',
         'set_pwm_duty_cycle',
@@ -337,9 +411,12 @@ class PurpleDropController(object):
     def __init__(self, purpledrop, board_definition):
         self.purpledrop = purpledrop
         self.board_definition = board_definition
+
         self.active_capacitance = 0.0
         self.raw_scan_capacitance = []
         self.calibrated_scan_capacitance = []
+        self.raw_group_capacitance = []
+        self.calibrated_group_capacitance = []
         self.scan_gains = [1.0] * N_PINS
         self.temperatures: Sequence[float] = []
         self.duty_cycles = {}
@@ -348,14 +425,17 @@ class PurpleDropController(object):
         self.lock = threading.Lock()
         self.event_listeners = []
         self.active_capacitance_counter = 0
+        self.group_capacitance_counter = 0
+        self.duty_cycle_updated_counter = 0
         self.hv_regulator_counter = 0
-        self.pin_state = [False] * N_PINS
+        self.pin_state = PinState()
 
         def msg_filter(msg):
             desired_types = [
                 messages.ActiveCapacitanceMsg,
                 messages.BulkCapacitanceMsg,
                 messages.CommandAckMsg,
+                messages.DutyCycleUpdatedMsg,
                 messages.TemperatureMsg,
                 messages.HvRegulatorMsg,
             ]
@@ -449,7 +529,7 @@ class PurpleDropController(object):
             # Throttle the events. 500Hz messages is a lot for the browser to process.
             # This also means logs don't have a full resolution, and it would be better
             # if clients could choose what they get
-            if (self.active_capacitance_counter % 1) == 0:
+            if (self.active_capacitance_counter % 10) == 0:
                 cap_event = messages_pb2.PurpleDropEvent()
                 cap_event.active_capacitance.baseline = msg.baseline
                 cap_event.active_capacitance.measurement = msg.measurement
@@ -458,29 +538,59 @@ class PurpleDropController(object):
                 self.__fire_event(cap_event)
 
         elif isinstance(msg, messages.BulkCapacitanceMsg):
-            # Scan capacitance measurements are broken up into multiple messages
-            if len(self.raw_scan_capacitance) < msg.start_index + msg.count:
-                self.raw_scan_capacitance.extend([0] * (msg.start_index + msg.count - len(self.raw_scan_capacitance)))
-                self.calibrated_scan_capacitance.extend([0] * (msg.start_index + msg.count - len(self.calibrated_scan_capacitance)))
-            for i in range(msg.count):
-                chan = msg.start_index + i
-                gain = self.scan_gains[chan]
-                self.raw_scan_capacitance[chan] = msg.measurements[i]
-                self.calibrated_scan_capacitance[chan] = self.__calibrate_capacitance(msg.measurements[i], gain)
-            # Fire event on the last group
-            if msg.start_index + msg.count == 128:
-                bulk_event = messages_pb2.PurpleDropEvent()
-                def make_cap_measurement(raw, calibrated):
-                    m = messages_pb2.CapacitanceMeasurement()
-                    m.raw = float(raw)
-                    m.capacitance = float(calibrated)
-                    return m
-                bulk_event.scan_capacitance.measurements.extend(
-                    [make_cap_measurement(raw, cal) 
-                    for (raw, cal) in zip(self.raw_scan_capacitance, self.calibrated_scan_capacitance)]
-                )
-                bulk_event.scan_capacitance.timestamp.CopyFrom(get_pb_timestamp())
-                self.__fire_event(bulk_event)
+            if(msg.group_scan != 0):
+                self.group_capacitance_counter += 1
+                if (self.group_capacitance_counter % 10) == 0:
+                    self.raw_group_capacitance = msg.measurements
+                    self.calibrated_group_capacitance = [0] * len(self.raw_group_capacitance)
+                    for i in range(msg.count):
+                        if self.pin_state.scan_groups[i].setting == 0:
+                            gain = CAPGAIN_HIGH
+                        else:
+                            gain = CAPGAIN_LOW
+                        self.calibrated_group_capacitance[i] = self.__calibrate_capacitance(msg.measurements[i], gain)
+                    group_event = messages_pb2.PurpleDropEvent()
+                    group_event.group_capacitance.timestamp.CopyFrom(get_pb_timestamp())
+                    group_event.group_capacitance.measurements[:] = self.calibrated_group_capacitance
+                    group_event.group_capacitance.raw_measurements[:] = self.raw_group_capacitance
+                    self.__fire_event(group_event)
+            else:
+                # Scan capacitance measurements are broken up into multiple messages
+                if len(self.raw_scan_capacitance) < msg.start_index + msg.count:
+                    self.raw_scan_capacitance.extend([0] * (msg.start_index + msg.count - len(self.raw_scan_capacitance)))
+                    self.calibrated_scan_capacitance.extend([0] * (msg.start_index + msg.count - len(self.calibrated_scan_capacitance)))
+                for i in range(msg.count):
+                    chan = msg.start_index + i
+                    gain = self.scan_gains[chan]
+                    self.raw_scan_capacitance[chan] = msg.measurements[i]
+                    self.calibrated_scan_capacitance[chan] = self.__calibrate_capacitance(msg.measurements[i], gain)
+                # Fire event on the last group
+                if msg.start_index + msg.count == 128:
+                    bulk_event = messages_pb2.PurpleDropEvent()
+                    def make_cap_measurement(raw, calibrated):
+                        m = messages_pb2.CapacitanceMeasurement()
+                        m.raw = float(raw)
+                        m.capacitance = float(calibrated)
+                        return m
+                    bulk_event.scan_capacitance.measurements.extend(
+                        [make_cap_measurement(raw, cal)
+                        for (raw, cal) in zip(self.raw_scan_capacitance, self.calibrated_scan_capacitance)]
+                    )
+                    bulk_event.scan_capacitance.timestamp.CopyFrom(get_pb_timestamp())
+                    self.__fire_event(bulk_event)
+
+        elif isinstance(msg, messages.DutyCycleUpdatedMsg):
+            self.duty_cycle_updated_counter += 1
+            if (self.duty_cycle_updated_counter%10) == 0:
+                # Update local state of duty cycle
+                self.pin_state.drive_groups[0].duty_cycle = msg.duty_cycle_A
+                self.pin_state.drive_groups[1].duty_cycle = msg.duty_cycle_B
+
+                # Publish event with new values
+                duty_cycle_event = messages_pb2.PurpleDropEvent()
+                duty_cycle_event.duty_cycle_updated.timestamp.CopyFrom(get_pb_timestamp())
+                duty_cycle_event.duty_cycle_updated.duty_cycles[:] = [msg.duty_cycle_A, msg.duty_cycle_B]
+                self.__fire_event(duty_cycle_event)
 
         elif isinstance(msg, messages.HvRegulatorMsg):
             self.hv_regulator_counter += 1
@@ -513,6 +623,20 @@ class PurpleDropController(object):
             if p['id'] == id:
                 return p
         return None
+
+    def __fire_pinstate_event(self):
+        def create_electrode_group(x):
+            eg = messages_pb2.ElectrodeGroup()
+            eg.electrodes[:] = x.pin_mask
+            eg.setting = x.setting
+            return eg
+        event = messages_pb2.PurpleDropEvent()
+        for g in self.pin_state.drive_groups:
+            event.electrode_state.drive_groups.add(electrodes=g.pin_mask, setting=g.setting)
+        for g in self.pin_state.scan_groups:
+            event.electrode_state.scan_groups.add(electrodes=g.pin_mask, setting=g.setting)
+
+        self.__fire_event(event)
 
     def get_software_version(self) -> Optional[str]:
         listener = self.purpledrop.get_sync_listener(msg_filter=messages.DataBlobMsg)
@@ -629,6 +753,16 @@ class PurpleDropController(object):
             "calibrated": self.calibrated_scan_capacitance
         }
 
+    def get_group_capacitance(self) -> Dict[str, List[float]]:
+        """Get the latest group scan capacitances
+
+        Arguments: None
+        """
+        return {
+            "raw": self.raw_group_capacitance,
+            "calibrated": self.calibrated_group_capacitance,
+        }
+
     def get_active_capacitance(self) -> float:
         """Get the most recent active electrode capacitance
 
@@ -645,9 +779,37 @@ class PurpleDropController(object):
         Returns: List of booleans
         """
         logging.debug("Received get_electrode_pins")
-        return self.pin_state
+        return self.pin_state.to_dict()
 
-    def set_electrode_pins(self, pins: Sequence[int]):
+    def set_capacitance_group(self, pins: Sequence[int], group_id: int, setting: int):
+        """Set a capacitance scan group.
+
+        Purpledrop support 5 scan groups. Each group defines a set of electrodes
+        which are measured together after each AC drive cycle.
+
+        Arguments:
+          - pins: A list of pins included in the group (may be empty to clear the group)
+          - group_id: The group number to set (0-4)
+        """
+        if group_id >= 5:
+            raise ValueError("group_id must be < 5")
+
+        # Send message to device to update
+        msg = ElectrodeEnableMsg()
+        msg.group_id = group_id + 100
+        msg.setting = setting
+        msg.values = pinlist2mask(pins)
+        self.purpledrop.send_message(msg)
+
+        logger.warning(f"Sending capacitance group {group_id} with {pins}")
+
+        # Update local state
+        self.pin_state.scan_groups[group_id] = PinState.ScanGroup(pinlist2bool(pins), setting)
+
+        # Send event with new state
+        self.__fire_pinstate_event()
+
+    def set_electrode_pins(self, pins: Sequence[int], group_id: int=0, duty_cycle: int=255):
         """Set the currently enabled pins
 
         Specified electrodes will be activated, all other will be deactivated.
@@ -655,21 +817,36 @@ class PurpleDropController(object):
 
         Arguments:
             - pins: A list of pin numbers to activate
+            - group_id: Which electrode enable group to be set (default: 0)
+                0: Drive group A
+                1: Drive group B
+            - duty_cycle: Duty cycle for the group (0-255)
         """
         logging.debug(f"Received set_electrode_pins({pins})")
+
+        if group_id < 0 or group_id > 1:
+            raise ValueError(f"group_id={group_id} is invalid. It must be 0 or 1.")
+
+        # Send message to device to update
         msg = ElectrodeEnableMsg()
-        event = messages_pb2.PurpleDropEvent()
-        self.pin_state = [False] * N_PINS
-
-        for p in pins:
-            word = int(p / 8)
-            bit = p % 8
-            msg.values[word] |= (1<<bit)
-            self.pin_state[p] = True
-
-        event.electrode_state.electrodes[:] = self.pin_state
+        msg.group_id = group_id
+        msg.setting = duty_cycle
+        msg.values = pinlist2mask(pins)
         self.purpledrop.send_message(msg)
-        self.__fire_event(event)
+
+        # Update local state
+        self.pin_state.drive_groups[group_id] = PinState.DriveGroup(pinlist2bool(pins), duty_cycle)
+
+        # Send event with new state
+        self.__fire_pinstate_event()
+
+    def set_feedback_command(self, target_capacitance, input_groups_mask, output_group, enable):
+        msg = messages.FeedbackCommandMsg()
+        msg.target_capacitance = target_capacitance
+        msg.input_groups_mask = input_groups_mask
+        msg.output_group = output_group
+        msg.enable = enable
+        self.purpledrop.send_message(msg)
 
     def move_drop(self,
                   start: Sequence[int],
