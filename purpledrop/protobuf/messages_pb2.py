@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='protobuf',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x17protobuf/messages.proto\x12\x08protobuf\"+\n\tTimestamp\x12\x0f\n\x07seconds\x18\x01 \x01(\x03\x12\r\n\x05nanos\x18\x02 \x01(\x05\"I\n\x0f\x45lectrodeLayout\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x0e\n\x06layout\x18\x02 \x01(\t\"E\n\x08Settings\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x11\n\tfrequency\x18\x02 \x01(\x02\"L\n\x0e\x45lectrodeState\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x12\n\nelectrodes\x18\x02 \x03(\x08\"P\n\x16\x43\x61pacitanceMeasurement\x12\x13\n\x0b\x63\x61pacitance\x18\x01 \x01(\x02\x12\x14\n\x0c\x64rop_present\x18\x02 \x01(\x08\x12\x0b\n\x03raw\x18\x03 \x01(\x02\"q\n\x0fScanCapacitance\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x36\n\x0cmeasurements\x18\x02 \x03(\x0b\x32 .protobuf.CapacitanceMeasurement\"v\n\x11\x41\x63tiveCapacitance\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x10\n\x08\x62\x61seline\x18\x03 \x01(\x02\x12\x13\n\x0bmeasurement\x18\x04 \x01(\x02\x12\x12\n\ncalibrated\x18\x05 \x01(\x02\"C\n\x05Image\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x12\n\nimage_data\x18\x02 \x01(\x0c\"\x93\x02\n\x0eImageTransform\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x11\n\ttransform\x18\x02 \x03(\x02\x12\x39\n\x08qr_codes\x18\x03 \x03(\x0b\x32\'.protobuf.ImageTransform.QrCodeLocation\x12\x13\n\x0bimage_width\x18\x04 \x01(\x05\x12\x14\n\x0cimage_height\x18\x05 \x01(\x05\x1a\x1d\n\x05Point\x12\t\n\x01x\x18\x01 \x01(\x05\x12\t\n\x01y\x18\x02 \x01(\x05\x1a\x41\n\x0eQrCodeLocation\x12/\n\x07\x63orners\x18\x01 \x03(\x0b\x32\x1e.protobuf.ImageTransform.Point\"\\\n\x0bHvRegulator\x12\x0f\n\x07voltage\x18\x01 \x01(\x02\x12\x14\n\x0cv_target_out\x18\x02 \x01(\x02\x12&\n\ttimestamp\x18\x03 \x01(\x0b\x32\x13.protobuf.Timestamp\"g\n\x12TemperatureControl\x12\x14\n\x0ctemperatures\x18\x01 \x03(\x02\x12\x13\n\x0b\x64uty_cycles\x18\x02 \x03(\x02\x12&\n\ttimestamp\x18\x03 \x01(\x0b\x32\x13.protobuf.Timestamp\"P\n\nDeviceInfo\x12\x11\n\tconnected\x18\x01 \x01(\x08\x12\x15\n\rserial_number\x18\x02 \x01(\t\x12\x18\n\x10software_version\x18\x03 \x01(\t\"\x8e\x04\n\x0fPurpleDropEvent\x12\x35\n\x10\x65lectrode_layout\x18\x01 \x01(\x0b\x32\x19.protobuf.ElectrodeLayoutH\x00\x12\x33\n\x0f\x65lectrode_state\x18\x02 \x01(\x0b\x32\x18.protobuf.ElectrodeStateH\x00\x12 \n\x05image\x18\x03 \x01(\x0b\x32\x0f.protobuf.ImageH\x00\x12\x33\n\x0fimage_transform\x18\x04 \x01(\x0b\x32\x18.protobuf.ImageTransformH\x00\x12&\n\x08settings\x18\x05 \x01(\x0b\x32\x12.protobuf.SettingsH\x00\x12\x35\n\x10scan_capacitance\x18\x06 \x01(\x0b\x32\x19.protobuf.ScanCapacitanceH\x00\x12\x39\n\x12\x61\x63tive_capacitance\x18\x07 \x01(\x0b\x32\x1b.protobuf.ActiveCapacitanceH\x00\x12-\n\x0chv_regulator\x18\x08 \x01(\x0b\x32\x15.protobuf.HvRegulatorH\x00\x12;\n\x13temperature_control\x18\t \x01(\x0b\x32\x1c.protobuf.TemperatureControlH\x00\x12+\n\x0b\x64\x65vice_info\x18\n \x01(\x0b\x32\x14.protobuf.DeviceInfoH\x00\x42\x05\n\x03msgb\x06proto3')
+  serialized_pb=_b('\n\x17protobuf/messages.proto\x12\x08protobuf\"+\n\tTimestamp\x12\x0f\n\x07seconds\x18\x01 \x01(\x03\x12\r\n\x05nanos\x18\x02 \x01(\x05\"I\n\x0f\x45lectrodeLayout\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x0e\n\x06layout\x18\x02 \x01(\t\"E\n\x08Settings\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x11\n\tfrequency\x18\x02 \x01(\x02\"5\n\x0e\x45lectrodeGroup\x12\x12\n\nelectrodes\x18\x01 \x03(\x08\x12\x0f\n\x07setting\x18\x02 \x01(\r\"\xab\x01\n\x0e\x45lectrodeState\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x12\n\nelectrodes\x18\x02 \x03(\x08\x12.\n\x0c\x64rive_groups\x18\x03 \x03(\x0b\x32\x18.protobuf.ElectrodeGroup\x12-\n\x0bscan_groups\x18\x04 \x03(\x0b\x32\x18.protobuf.ElectrodeGroup\"O\n\x10\x44utyCycleUpdated\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x13\n\x0b\x64uty_cycles\x18\x02 \x03(\r\"P\n\x16\x43\x61pacitanceMeasurement\x12\x13\n\x0b\x63\x61pacitance\x18\x01 \x01(\x02\x12\x14\n\x0c\x64rop_present\x18\x02 \x01(\x08\x12\x0b\n\x03raw\x18\x03 \x01(\x02\"q\n\x0fScanCapacitance\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x36\n\x0cmeasurements\x18\x02 \x03(\x0b\x32 .protobuf.CapacitanceMeasurement\"j\n\x10GroupCapacitance\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x14\n\x0cmeasurements\x18\x02 \x03(\x02\x12\x18\n\x10raw_measurements\x18\x03 \x03(\x02\"v\n\x11\x41\x63tiveCapacitance\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x10\n\x08\x62\x61seline\x18\x03 \x01(\x02\x12\x13\n\x0bmeasurement\x18\x04 \x01(\x02\x12\x12\n\ncalibrated\x18\x05 \x01(\x02\"C\n\x05Image\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x12\n\nimage_data\x18\x02 \x01(\x0c\"\x93\x02\n\x0eImageTransform\x12&\n\ttimestamp\x18\x01 \x01(\x0b\x32\x13.protobuf.Timestamp\x12\x11\n\ttransform\x18\x02 \x03(\x02\x12\x39\n\x08qr_codes\x18\x03 \x03(\x0b\x32\'.protobuf.ImageTransform.QrCodeLocation\x12\x13\n\x0bimage_width\x18\x04 \x01(\x05\x12\x14\n\x0cimage_height\x18\x05 \x01(\x05\x1a\x1d\n\x05Point\x12\t\n\x01x\x18\x01 \x01(\x05\x12\t\n\x01y\x18\x02 \x01(\x05\x1a\x41\n\x0eQrCodeLocation\x12/\n\x07\x63orners\x18\x01 \x03(\x0b\x32\x1e.protobuf.ImageTransform.Point\"\\\n\x0bHvRegulator\x12\x0f\n\x07voltage\x18\x01 \x01(\x02\x12\x14\n\x0cv_target_out\x18\x02 \x01(\x02\x12&\n\ttimestamp\x18\x03 \x01(\x0b\x32\x13.protobuf.Timestamp\"g\n\x12TemperatureControl\x12\x14\n\x0ctemperatures\x18\x01 \x03(\x02\x12\x13\n\x0b\x64uty_cycles\x18\x02 \x03(\x02\x12&\n\ttimestamp\x18\x03 \x01(\x0b\x32\x13.protobuf.Timestamp\"P\n\nDeviceInfo\x12\x11\n\tconnected\x18\x01 \x01(\x08\x12\x15\n\rserial_number\x18\x02 \x01(\t\x12\x18\n\x10software_version\x18\x03 \x01(\t\"\x81\x05\n\x0fPurpleDropEvent\x12\x35\n\x10\x65lectrode_layout\x18\x01 \x01(\x0b\x32\x19.protobuf.ElectrodeLayoutH\x00\x12\x33\n\x0f\x65lectrode_state\x18\x02 \x01(\x0b\x32\x18.protobuf.ElectrodeStateH\x00\x12 \n\x05image\x18\x03 \x01(\x0b\x32\x0f.protobuf.ImageH\x00\x12\x33\n\x0fimage_transform\x18\x04 \x01(\x0b\x32\x18.protobuf.ImageTransformH\x00\x12&\n\x08settings\x18\x05 \x01(\x0b\x32\x12.protobuf.SettingsH\x00\x12\x35\n\x10scan_capacitance\x18\x06 \x01(\x0b\x32\x19.protobuf.ScanCapacitanceH\x00\x12\x39\n\x12\x61\x63tive_capacitance\x18\x07 \x01(\x0b\x32\x1b.protobuf.ActiveCapacitanceH\x00\x12-\n\x0chv_regulator\x18\x08 \x01(\x0b\x32\x15.protobuf.HvRegulatorH\x00\x12;\n\x13temperature_control\x18\t \x01(\x0b\x32\x1c.protobuf.TemperatureControlH\x00\x12+\n\x0b\x64\x65vice_info\x18\n \x01(\x0b\x32\x14.protobuf.DeviceInfoH\x00\x12\x37\n\x11group_capacitance\x18\x0b \x01(\x0b\x32\x1a.protobuf.GroupCapacitanceH\x00\x12\x38\n\x12\x64uty_cycle_updated\x18\x0c \x01(\x0b\x32\x1a.protobuf.DutyCycleUpdatedH\x00\x42\x05\n\x03msgb\x06proto3')
 )
 
 
@@ -139,6 +139,44 @@ _SETTINGS = _descriptor.Descriptor(
 )
 
 
+_ELECTRODEGROUP = _descriptor.Descriptor(
+  name='ElectrodeGroup',
+  full_name='protobuf.ElectrodeGroup',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='electrodes', full_name='protobuf.ElectrodeGroup.electrodes', index=0,
+      number=1, type=8, cpp_type=7, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='setting', full_name='protobuf.ElectrodeGroup.setting', index=1,
+      number=2, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=228,
+  serialized_end=281,
+)
+
+
 _ELECTRODESTATE = _descriptor.Descriptor(
   name='ElectrodeState',
   full_name='protobuf.ElectrodeState',
@@ -160,6 +198,20 @@ _ELECTRODESTATE = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='drive_groups', full_name='protobuf.ElectrodeState.drive_groups', index=2,
+      number=3, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='scan_groups', full_name='protobuf.ElectrodeState.scan_groups', index=3,
+      number=4, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -172,8 +224,46 @@ _ELECTRODESTATE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=228,
-  serialized_end=304,
+  serialized_start=284,
+  serialized_end=455,
+)
+
+
+_DUTYCYCLEUPDATED = _descriptor.Descriptor(
+  name='DutyCycleUpdated',
+  full_name='protobuf.DutyCycleUpdated',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='timestamp', full_name='protobuf.DutyCycleUpdated.timestamp', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='duty_cycles', full_name='protobuf.DutyCycleUpdated.duty_cycles', index=1,
+      number=2, type=13, cpp_type=3, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=457,
+  serialized_end=536,
 )
 
 
@@ -217,8 +307,8 @@ _CAPACITANCEMEASUREMENT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=306,
-  serialized_end=386,
+  serialized_start=538,
+  serialized_end=618,
 )
 
 
@@ -255,8 +345,53 @@ _SCANCAPACITANCE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=388,
-  serialized_end=501,
+  serialized_start=620,
+  serialized_end=733,
+)
+
+
+_GROUPCAPACITANCE = _descriptor.Descriptor(
+  name='GroupCapacitance',
+  full_name='protobuf.GroupCapacitance',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='timestamp', full_name='protobuf.GroupCapacitance.timestamp', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='measurements', full_name='protobuf.GroupCapacitance.measurements', index=1,
+      number=2, type=2, cpp_type=6, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='raw_measurements', full_name='protobuf.GroupCapacitance.raw_measurements', index=2,
+      number=3, type=2, cpp_type=6, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=735,
+  serialized_end=841,
 )
 
 
@@ -307,8 +442,8 @@ _ACTIVECAPACITANCE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=503,
-  serialized_end=621,
+  serialized_start=843,
+  serialized_end=961,
 )
 
 
@@ -345,8 +480,8 @@ _IMAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=623,
-  serialized_end=690,
+  serialized_start=963,
+  serialized_end=1030,
 )
 
 
@@ -383,8 +518,8 @@ _IMAGETRANSFORM_POINT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=872,
-  serialized_end=901,
+  serialized_start=1212,
+  serialized_end=1241,
 )
 
 _IMAGETRANSFORM_QRCODELOCATION = _descriptor.Descriptor(
@@ -413,8 +548,8 @@ _IMAGETRANSFORM_QRCODELOCATION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=903,
-  serialized_end=968,
+  serialized_start=1243,
+  serialized_end=1308,
 )
 
 _IMAGETRANSFORM = _descriptor.Descriptor(
@@ -471,8 +606,8 @@ _IMAGETRANSFORM = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=693,
-  serialized_end=968,
+  serialized_start=1033,
+  serialized_end=1308,
 )
 
 
@@ -516,8 +651,8 @@ _HVREGULATOR = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=970,
-  serialized_end=1062,
+  serialized_start=1310,
+  serialized_end=1402,
 )
 
 
@@ -561,8 +696,8 @@ _TEMPERATURECONTROL = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1064,
-  serialized_end=1167,
+  serialized_start=1404,
+  serialized_end=1507,
 )
 
 
@@ -606,8 +741,8 @@ _DEVICEINFO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1169,
-  serialized_end=1249,
+  serialized_start=1509,
+  serialized_end=1589,
 )
 
 
@@ -688,6 +823,20 @@ _PURPLEDROPEVENT = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='group_capacitance', full_name='protobuf.PurpleDropEvent.group_capacitance', index=10,
+      number=11, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='duty_cycle_updated', full_name='protobuf.PurpleDropEvent.duty_cycle_updated', index=11,
+      number=12, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -703,15 +852,19 @@ _PURPLEDROPEVENT = _descriptor.Descriptor(
       name='msg', full_name='protobuf.PurpleDropEvent.msg',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=1252,
-  serialized_end=1778,
+  serialized_start=1592,
+  serialized_end=2233,
 )
 
 _ELECTRODELAYOUT.fields_by_name['timestamp'].message_type = _TIMESTAMP
 _SETTINGS.fields_by_name['timestamp'].message_type = _TIMESTAMP
 _ELECTRODESTATE.fields_by_name['timestamp'].message_type = _TIMESTAMP
+_ELECTRODESTATE.fields_by_name['drive_groups'].message_type = _ELECTRODEGROUP
+_ELECTRODESTATE.fields_by_name['scan_groups'].message_type = _ELECTRODEGROUP
+_DUTYCYCLEUPDATED.fields_by_name['timestamp'].message_type = _TIMESTAMP
 _SCANCAPACITANCE.fields_by_name['timestamp'].message_type = _TIMESTAMP
 _SCANCAPACITANCE.fields_by_name['measurements'].message_type = _CAPACITANCEMEASUREMENT
+_GROUPCAPACITANCE.fields_by_name['timestamp'].message_type = _TIMESTAMP
 _ACTIVECAPACITANCE.fields_by_name['timestamp'].message_type = _TIMESTAMP
 _IMAGE.fields_by_name['timestamp'].message_type = _TIMESTAMP
 _IMAGETRANSFORM_POINT.containing_type = _IMAGETRANSFORM
@@ -731,6 +884,8 @@ _PURPLEDROPEVENT.fields_by_name['active_capacitance'].message_type = _ACTIVECAPA
 _PURPLEDROPEVENT.fields_by_name['hv_regulator'].message_type = _HVREGULATOR
 _PURPLEDROPEVENT.fields_by_name['temperature_control'].message_type = _TEMPERATURECONTROL
 _PURPLEDROPEVENT.fields_by_name['device_info'].message_type = _DEVICEINFO
+_PURPLEDROPEVENT.fields_by_name['group_capacitance'].message_type = _GROUPCAPACITANCE
+_PURPLEDROPEVENT.fields_by_name['duty_cycle_updated'].message_type = _DUTYCYCLEUPDATED
 _PURPLEDROPEVENT.oneofs_by_name['msg'].fields.append(
   _PURPLEDROPEVENT.fields_by_name['electrode_layout'])
 _PURPLEDROPEVENT.fields_by_name['electrode_layout'].containing_oneof = _PURPLEDROPEVENT.oneofs_by_name['msg']
@@ -761,12 +916,21 @@ _PURPLEDROPEVENT.fields_by_name['temperature_control'].containing_oneof = _PURPL
 _PURPLEDROPEVENT.oneofs_by_name['msg'].fields.append(
   _PURPLEDROPEVENT.fields_by_name['device_info'])
 _PURPLEDROPEVENT.fields_by_name['device_info'].containing_oneof = _PURPLEDROPEVENT.oneofs_by_name['msg']
+_PURPLEDROPEVENT.oneofs_by_name['msg'].fields.append(
+  _PURPLEDROPEVENT.fields_by_name['group_capacitance'])
+_PURPLEDROPEVENT.fields_by_name['group_capacitance'].containing_oneof = _PURPLEDROPEVENT.oneofs_by_name['msg']
+_PURPLEDROPEVENT.oneofs_by_name['msg'].fields.append(
+  _PURPLEDROPEVENT.fields_by_name['duty_cycle_updated'])
+_PURPLEDROPEVENT.fields_by_name['duty_cycle_updated'].containing_oneof = _PURPLEDROPEVENT.oneofs_by_name['msg']
 DESCRIPTOR.message_types_by_name['Timestamp'] = _TIMESTAMP
 DESCRIPTOR.message_types_by_name['ElectrodeLayout'] = _ELECTRODELAYOUT
 DESCRIPTOR.message_types_by_name['Settings'] = _SETTINGS
+DESCRIPTOR.message_types_by_name['ElectrodeGroup'] = _ELECTRODEGROUP
 DESCRIPTOR.message_types_by_name['ElectrodeState'] = _ELECTRODESTATE
+DESCRIPTOR.message_types_by_name['DutyCycleUpdated'] = _DUTYCYCLEUPDATED
 DESCRIPTOR.message_types_by_name['CapacitanceMeasurement'] = _CAPACITANCEMEASUREMENT
 DESCRIPTOR.message_types_by_name['ScanCapacitance'] = _SCANCAPACITANCE
+DESCRIPTOR.message_types_by_name['GroupCapacitance'] = _GROUPCAPACITANCE
 DESCRIPTOR.message_types_by_name['ActiveCapacitance'] = _ACTIVECAPACITANCE
 DESCRIPTOR.message_types_by_name['Image'] = _IMAGE
 DESCRIPTOR.message_types_by_name['ImageTransform'] = _IMAGETRANSFORM
@@ -797,12 +961,26 @@ Settings = _reflection.GeneratedProtocolMessageType('Settings', (_message.Messag
   ))
 _sym_db.RegisterMessage(Settings)
 
+ElectrodeGroup = _reflection.GeneratedProtocolMessageType('ElectrodeGroup', (_message.Message,), dict(
+  DESCRIPTOR = _ELECTRODEGROUP,
+  __module__ = 'protobuf.messages_pb2'
+  # @@protoc_insertion_point(class_scope:protobuf.ElectrodeGroup)
+  ))
+_sym_db.RegisterMessage(ElectrodeGroup)
+
 ElectrodeState = _reflection.GeneratedProtocolMessageType('ElectrodeState', (_message.Message,), dict(
   DESCRIPTOR = _ELECTRODESTATE,
   __module__ = 'protobuf.messages_pb2'
   # @@protoc_insertion_point(class_scope:protobuf.ElectrodeState)
   ))
 _sym_db.RegisterMessage(ElectrodeState)
+
+DutyCycleUpdated = _reflection.GeneratedProtocolMessageType('DutyCycleUpdated', (_message.Message,), dict(
+  DESCRIPTOR = _DUTYCYCLEUPDATED,
+  __module__ = 'protobuf.messages_pb2'
+  # @@protoc_insertion_point(class_scope:protobuf.DutyCycleUpdated)
+  ))
+_sym_db.RegisterMessage(DutyCycleUpdated)
 
 CapacitanceMeasurement = _reflection.GeneratedProtocolMessageType('CapacitanceMeasurement', (_message.Message,), dict(
   DESCRIPTOR = _CAPACITANCEMEASUREMENT,
@@ -817,6 +995,13 @@ ScanCapacitance = _reflection.GeneratedProtocolMessageType('ScanCapacitance', (_
   # @@protoc_insertion_point(class_scope:protobuf.ScanCapacitance)
   ))
 _sym_db.RegisterMessage(ScanCapacitance)
+
+GroupCapacitance = _reflection.GeneratedProtocolMessageType('GroupCapacitance', (_message.Message,), dict(
+  DESCRIPTOR = _GROUPCAPACITANCE,
+  __module__ = 'protobuf.messages_pb2'
+  # @@protoc_insertion_point(class_scope:protobuf.GroupCapacitance)
+  ))
+_sym_db.RegisterMessage(GroupCapacitance)
 
 ActiveCapacitance = _reflection.GeneratedProtocolMessageType('ActiveCapacitance', (_message.Message,), dict(
   DESCRIPTOR = _ACTIVECAPACITANCE,
