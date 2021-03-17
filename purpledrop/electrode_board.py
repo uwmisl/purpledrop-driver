@@ -76,26 +76,47 @@ class Registration(object):
 class Layout(object):
     def __init__(self, layout_def: Dict[str, Any]):
         self.peripherals = None
-        self.grid = []
-        # Replace -1 with None
-        for row in layout_def['grid']:
-            new_row: List[Optional[int]] = []
-            
-            for pin in row:
-                if pin == -1 or pin is None:
-                    new_row.append(None)
-                else:
-                    new_row.append(int(pin))
+        self.grids = []
 
-            self.grid.append(new_row)    
+        def intify_pins(grid_pins):
+            result = []
+            for row in grid_pins:
+                new_row: List[Optional[int]] = []
+                for pin in row:
+                    if pin == -1 or pin is None:
+                        new_row.append(None)
+                    else:
+                        new_row.append(int(pin))
+                result.append(new_row)
+            return result
+
+        # Old format files use 'grid' to define a single grid
+        # New format uses an array of objects, under the key 'grids'
+        if 'grid' in layout_def:
+            self.grids.append({
+                'origin': [0.0, 0.0],
+                'pitch': 1.0,
+                'pins': intify_pins(layout_def['grid'])
+            })
+        elif 'grids' in layout_def:
+            for g in layout_def['grids']:
+                self.grids.append({
+                    'origin': g['origin'],
+                    'pitch': g['pitch'],
+                    'pins': intify_pins(g['pins']),
+                })
 
         if 'peripherals' in layout_def:
             self.peripherals = [load_peripheral(p, layout_def.get('peripheral_templates', None)) for p in layout_def['peripherals']]
 
-    def grid_location_to_pin(self, x, y):
+    def grid_location_to_pin(self, x, y, grid_number=0):
         """Return the pin number at given grid location, or None if no pin is 
         defined there.
         """
+        if grid_number < len(self.grids):
+            grid = self.grids[grid_number]['pins']
+        else:
+            grid = [[]] # Empty grid
         if y < 0 or y >= len(self.grid):
             return None
         row = self.grid[y]
@@ -107,7 +128,7 @@ class Layout(object):
         """Return a serializable dict version of the board definition
         """
         return {
-            "grid": self.grid,
+            "grids": self.grids,
             "peripherals": self.peripherals
         }
 
@@ -116,6 +137,8 @@ class Board(object):
     """
     def __init__(self, board_def: Dict[str, Any]):
         self.registration: Optional[Registration] = None
+        if not 'layout' in board_def:
+            raise RuntimeError("Board definition file must contain a 'layout' object")
         self.layout = Layout(board_def['layout'])
         self.oversized_electrodes = board_def.get('oversized_electrodes', [])
         if 'registration' in board_def:

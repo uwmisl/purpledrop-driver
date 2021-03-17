@@ -117,9 +117,9 @@ class LiveView extends React.Component {
         }
         let newPins = [];
         for (let i = 0; i < activePins.length; i++) {
-            let pinLoc = this.props.layout.findPinLocation(activePins[i]);
-            let newLoc = [pinLoc[0] + dx, pinLoc[1] + dy];
-            let pin = this.props.layout.getPinAtPos(newLoc[0], newLoc[1]);
+            let {location, grid_number} = this.props.layout.findPinLocation(activePins[i]);
+            let newLoc = [location[0] + dx, location[1] + dy];
+            let pin = this.props.layout.getPinAtPos(newLoc[0], newLoc[1], grid_number);
             if (pin !== null) {
                 newPins.push(pin);
             } else {
