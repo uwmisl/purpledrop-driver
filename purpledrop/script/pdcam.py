@@ -2,7 +2,6 @@ import click
 import cv2
 import json
 import matplotlib.pyplot as plt
-from pyzbar.pyzbar import decode
 
 from purpledrop.pdcam.image_registration import find_fiducials, find_grid_transform
 from purpledrop.pdcam.plotting import mark_fiducial, plot_template
