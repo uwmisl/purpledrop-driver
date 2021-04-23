@@ -117,12 +117,12 @@ class Layout(object):
             grid = self.grids[grid_number]['pins']
         else:
             grid = [[]] # Empty grid
-        if y < 0 or y >= len(self.grid):
+        if y < 0 or y >= len(grid):
             return None
-        row = self.grid[y]
+        row = grid[y]
         if x < 0 or x >= len(row):
             return None
-        return self.grid[y][x]
+        return grid[y][x]
 
     def as_dict(self) -> dict:
         """Return a serializable dict version of the board definition
