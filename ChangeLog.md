@@ -1,5 +1,15 @@
 # Change Log
 
+## v0.4.0 (Apr 28, 2021)
+
+- Supports embedded software v0.4.x
+  - It does *not* support older versions. Update of embedded software is required.
+- Add support for feedback control commands, drive groups, and capacitance
+scan groups
+- Add support for electrode board definitions with multiple non-homogenous grids
+- Add support for providing control points in command arguments for `pdcam measure`
+- Add MISL v6 electrode board definition
+
 ## v0.3.0 (Mar 11, 2021)
 
 - Add RPC call for GPIO control
