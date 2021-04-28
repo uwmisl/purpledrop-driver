@@ -14,11 +14,19 @@ function rotate(center, points, angle) {
 
 class Layout {
   constructor(layout) {
-    this.grid = layout.grid;
+    this.grids = layout.grids;
     this.peripherals = layout.peripherals;
     this.memoized_polygons = null;
     this.electrode_areas = {};
 
+    // Precompute grid areas
+    this.grids.forEach((grid) => {
+      grid.pins.forEach((row) => {
+        row.forEach((pin) => {
+          this.electrode_areas[pin] = grid.pitch * grid.pitch;
+        });
+      });
+    });
     // Precompute peripheral pad areas
     this.peripherals.forEach((periph) => {
       periph.electrodes.forEach((electrode) => {
@@ -27,37 +35,42 @@ class Layout {
       });
     });
   }
-  
+
   electrode_polygons() {
     if(!this.memoized_polygons) {
       let polygons = [];
-      this.grid.forEach((row, y) => {
-        row.forEach((pin, x) => {
-          if(pin === null) {
-            return;
-          }
-          let position = [x, y];
-          // Points in grid coordinates, where each electrode's top-left corner
-          // is at integer coordinate (n, m)
-          let points = [
-            [position[0], position[1]],
-            [position[0] + 1, position[1]],
-            [position[0] + 1, position[1] + 1],
-            [position[0], position[1] + 1],
-            [position[0], position[1]],
-          ];
+      this.grids.forEach((grid) => {
+        grid.pins.forEach((row, y) => {
+          row.forEach((pin, x) => {
+            if(pin === null) {
+              return;
+            }
+            let position = [x * grid.pitch + grid.origin[0], y * grid.pitch + grid.origin[1]];
+            // Points in grid coordinates, where each electrode's top-left corner
+            // is at integer coordinate (n, m)
+            let points = [
+              [position[0], position[1]],
+              [position[0] + grid.pitch, position[1]],
+              [position[0] + grid.pitch, position[1] + grid.pitch],
+              [position[0], position[1] + grid.pitch],
+              [position[0], position[1]],
+            ];
 
-          polygons.push({pin: pin, points: points});
+            polygons.push({pin: pin, points: points});
+          });
         });
       });
-
       this.peripherals.forEach((group) => {
         let group_origin = group.origin;
         group.electrodes.forEach((electrode) => {
           let electrode_origin = [group_origin[0] + electrode.origin[0], group_origin[1] + electrode.origin[1]];
           let points = electrode.polygon.map((p) => [p[0] + electrode_origin[0], p[1] + electrode_origin[1]]);
-          points.push(points[0]); // Close the polygon for offset calculation
           
+          // Explicity close polygon, if it is not already
+          if(JSON.stringify(points[0]) != JSON.stringify(points[points.length - 1])) {
+            points.push(points[0]); // Close the polygon for offset calculation
+          }
+
           let pin = electrode.pin;
 
           if(group.rotation) {
@@ -90,16 +103,15 @@ class Layout {
   }
 
   getPinArea(pin) {
-    // Regular electrodes have unit area; the exceptions are special peripheral 
-    // electrodes which have a polygon used to compute the area
-    return this.electrode_areas[pin] || 1.0;
+    return this.electrode_areas[pin] || 0.0;
   }
 
-  getPinAtPos(x, y) {
-    if(y >= this.grid.length) {
+  getPinAtPos(x, y, gridNumber = 0) {
+    const grid = this.grids[gridNumber];
+    if(y >= grid.pins.length) {
       return null;
     }
-    let row = this.grid[y];
+    let row = grid.pins[y];
     if(x >= row.length) {
       return null;
     }
@@ -107,11 +119,17 @@ class Layout {
   }
 
   findPinLocation(pin) {
-    for(let y=0; y<this.grid.length; y++) {
-      let row = this.grid[y];
-      for(let x=0; x<row.length; x++) {
-        if(pin == row[x]) {
-          return [x, y];
+    for(let idx=0; idx<this.grids.length; idx++) {
+      let grid = this.grids[idx];
+      for(let y=0; y<grid.pins.length; y++) {
+        let row = grid.pins[y];
+        for(let x=0; x<row.length; x++) {
+          if(pin == row[x]) {
+            return {
+              location: [x, y],
+              gridNumber: idx,
+            };
+          }
         }
       }
     }
@@ -122,14 +140,15 @@ class Layout {
     if (typeof size === 'undefined') {
       size = (1, 1);
     }
-    let origin = this.findPinLocation(pin);
-    if(origin === null) {
+    let pinLocation = this.findPinLocation(pin);
+    if(pinLocation === null) {
       return [];
     }
+    let {location, gridNumber} = pinLocation;
     let result = [];
     for(let x = 0; x<size[0]; x++) {
       for(let y = 0; y<size[1]; y++) {
-        result.push(this.getPinAtPos(x + origin[0], y + origin[1]));
+        result.push(this.getPinAtPos(x + location[0], y + location[1], gridNumber));
       }
     }
     return result;

@@ -14,6 +14,9 @@ determine the length of a packet (which may be a function of the packet contents
 for variable length messages).
 """
 from typing import Callable, Iterator, Optional, Tuple
+import logging
+
+logger = logging.getLogger()
 
 def calc_checksum(data: bytes) -> Tuple[int, int]:
     a = 0
@@ -81,6 +84,8 @@ class MessageFramer(object):
             self._escaping = True
             return None
         elif b == 0x7e:
+            if self._parsing and len(self._buffer) > 0:
+                logger.warning(f"Aborted parsing a message (ID={self._buffer[0]})")
             # start of frame
             self.reset()
             self._parsing = True
@@ -93,7 +98,7 @@ class MessageFramer(object):
 
         expected_size = self._size_predictor(self._buffer)
         if expected_size == -1:
-            print("Got invalid message size")
+            logger.warning("Got invalid message size")
             # Not a valid message
             self.reset()
         elif expected_size > 0 and len(self._buffer) >= expected_size + 2:
@@ -103,8 +108,7 @@ class MessageFramer(object):
                 self.reset()
                 return msg_without_checksum
             else:
-                print(f"Checksum mismatch (id: {self._buffer[0]})")
-                print(f"buf: {[hex(a) for a in self._buffer]}")
+                logger.warning(f"Checksum mismatch (id: {self._buffer[0]}, buf: {[hex(a) for a in self._buffer]})")
                 self.reset()
         
         return None

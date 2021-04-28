@@ -147,7 +147,10 @@ def overlay(reference, imagefile):
 @click.option('--v4', is_flag=True, default=False)
 @click.option('--v4_1', is_flag=True, default=False)
 @click.option('--v5', is_flag=True, default=False)
-def measure(imagefile, outfile, v4, v4_1, v5):
+@click.option('--layout', required=False, help="JSON file to read board layout from")
+@click.option('--point', 'points', multiple=True, help="Control points in grid coordinates: 'x, y'")
+@click.option('-v', '--verbose', is_flag=True, help='verbose output')
+def measure(imagefile, outfile, v4, v4_1, v5, layout, points, verbose):
     """Launch UI to make calibration measurements from image
     """
 
@@ -156,6 +159,12 @@ def measure(imagefile, outfile, v4, v4_1, v5):
     # good set of control electrodes
     img = cv2.cvtColor(cv2.imread(imagefile), cv2.COLOR_BGR2RGB)
 
+    def read_input_tuple(x):
+        try:
+            return tuple(int(n) for n in x.split(','))
+        except ValueError as ex:
+            raise ValueError(f"Failed parsing point {x}: {ex}")
+
     fiducials = find_fiducials(img)
     for f in fiducials:
         print(f)
@@ -163,6 +172,16 @@ def measure(imagefile, outfile, v4, v4_1, v5):
     
     electrode_layout = ELECTRODE_LAYOUT_v3
     control_electrodes = CONTROL_ELECTRODES_v3
+    pitch = 1.0
+    grid_origin = (0.0, 0.0)
+    if layout:
+        if points is None or len(points) < 4:
+            raise ValueError("If providing a custom layout, you must provide at least 4 calibration points with --point")
+        board = load_board(layout)
+        electrode_layout = board.layout.grids[0]['pins']
+        control_electrodes = [read_input_tuple(p) for p in points]
+        pitch = board.layout.grids[0]['pitch']
+        origin = board.layout.grids[0]['origin']
     if v4:
         electrode_layout = ELECTRODE_LAYOUT_v4
         control_electrodes = CONTROL_ELECTRODES_v4
@@ -172,6 +191,11 @@ def measure(imagefile, outfile, v4, v4_1, v5):
     elif v5: 
         electrode_layout = ELECTRODE_LAYOUT_v5
         control_electrodes = CONTROL_ELECTRODES_v5
+
+
+    if verbose:
+        print(f"Using control points: {control_electrodes}")
+        print(f"Using layout: {electrode_layout}")
 
     alignment_electrodes = control_electrodes
     fig = plt.figure()
@@ -221,7 +245,7 @@ def measure(imagefile, outfile, v4, v4_1, v5):
 
     data = {
         'fiducials': [f.to_dict() for f in fiducials],
-        'control_points': [ {"grid": n, "image": p} for n,p in zip(alignment_electrodes, alignment_points) ]
+        'control_points': [ {"grid": (n[0]*pitch + origin[0], n[1]*pitch + origin[1]), "image": p} for n,p in zip(alignment_electrodes, alignment_points) ]
     }
 
     print("Storing reference data to %s" % outfile)

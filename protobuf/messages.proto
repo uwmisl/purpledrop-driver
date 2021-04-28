@@ -17,9 +17,26 @@ message Settings {
     float frequency = 2;
 }
 
+message ElectrodeGroup {
+    repeated bool electrodes = 1;
+    uint32 setting = 2;
+}
+
+// This message is overloaded for backwards compatibility
+// In older software versions, a single set of active electrodes was stored in
+// `electrodes` prop. In later versions, `electrodes` is left empty and instead
+// multiple drive groups and multiple scan groups are stored along with a
+// setting byte.
 message ElectrodeState {
     Timestamp timestamp = 1;
     repeated bool electrodes = 2;
+    repeated ElectrodeGroup drive_groups = 3;
+    repeated ElectrodeGroup scan_groups = 4;
+}
+
+message DutyCycleUpdated {
+    Timestamp timestamp = 1;
+    repeated uint32 duty_cycles = 2;
 }
 
 message CapacitanceMeasurement {
@@ -32,6 +49,12 @@ message CapacitanceMeasurement {
 message ScanCapacitance {
     Timestamp timestamp = 1;
     repeated CapacitanceMeasurement measurements = 2;
+}
+
+message GroupCapacitance {
+    Timestamp timestamp = 1;
+    repeated float measurements = 2;
+    repeated float raw_measurements = 3;
 }
 
 // Capacitance measurement for the currently active electrodes (combined into
@@ -93,5 +116,7 @@ message PurpleDropEvent {
         HvRegulator hv_regulator = 8;
         TemperatureControl temperature_control = 9;
         DeviceInfo device_info = 10;
+        GroupCapacitance group_capacitance = 11;
+        DutyCycleUpdated duty_cycle_updated = 12;
     }
 }

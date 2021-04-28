@@ -59,24 +59,25 @@ class BulkCapacitanceMsg(PurpleDropMessage):
         if fill_data is not None:
             self.fill(fill_data)
         else:
+            self.group_scan = 0
             self.start_index = 0
             self.count = 0
             self.measurements: Sequence[int] = []
 
     @staticmethod
     def predictSize(buf: bytes) -> int:
-        if len(buf) < 3:
+        if len(buf) < 4:
             return 0
         else:
-            return buf[2] * 2 + 3
+            return buf[3] * 2 + 4
 
     def fill(self, buf):
-        if len(buf) < 3:
-            raise ValueError("Need at least 3 bytes to parse a BulkCapacitanceMsg")
-        self.start_index, self.count = struct.unpack_from("<BB", buf, 1)
-        if len(buf) < self.count * 2 + 3:
+        if len(buf) < 4:
+            raise ValueError("Need at least 4 bytes to parse a BulkCapacitanceMsg")
+        self.group_scan, self.start_index, self.count = struct.unpack_from("<BBB", buf, 1)
+        if len(buf) < self.count * 2 + 4:
             raise ValueError(f"Not enough data for BulkCapacitanceMsg with count {self.count}")
-        self.measurements = struct.unpack_from("<" + "H" * self.count, buf, 3)
+        self.measurements = struct.unpack_from("<" + "H" * self.count, buf, 4)
 
 class CalibrateCommandMsg(PurpleDropMessage):
     ID = 13
@@ -159,19 +160,71 @@ class DataBlobMsg(PurpleDropMessage):
         ret += self.payload
         return ret
 
+class DutyCycleUpdatedMsg(PurpleDropMessage):
+    ID = 15
+
+    def __init__(self, fill_data: Optional[bytes]=None):
+        if(fill_data):
+            self.fill(fill_data)
+        else:
+            self.duty_cycle_A = 0
+            self.duty_cycle_B = 0
+
+    @staticmethod
+    def predictSize(buf: bytes) -> int:
+        return 3
+
+    def fill(self, fill_data: bytes):
+        if len(fill_data) < 3:
+            raise ValueError("Need at least 3 bytes for a DutyCycleUpdated message")
+
+        self.duty_cycle_A = fill_data[1]
+        self.duty_cycle_B = fill_data[2]
+
+class FeedbackCommandMsg(PurpleDropMessage):
+    ID = 16
+
+    # Modes
+    DISABLED = 0
+    NORMAL = 1
+    DIFFERENTIAL = 2
+
+    def __init__(self, fill_data: Optional[bytes]=None):
+        if(fill_data):
+            raise RuntimeError("Receiving FeedbackCommandMsg unimplemented")
+        else:
+            self.target = 0.0
+            self.mode = 0
+            self.input_groups_p_mask = 0
+            self.input_groups_n_mask = 0
+            self.baseline = 0
+
+    def to_bytes(self) -> bytes:
+        return struct.pack(
+            "<BfBBBB",
+            self.ID,
+            self.target,
+            self.mode,
+            self.input_groups_p_mask,
+            self.input_groups_n_mask,
+            self.baseline
+        )
+
 class ElectrodeEnableMsg(PurpleDropMessage):
     ID = 0
 
     def __init__(self, fill_data: Optional[bytes]=None):
+        self.group_id = 0
+        self.setting = 0
         self.values = [0] * 16
 
     @staticmethod
     def predictSize(buf: bytes) -> int:
-        return 16
+        return 19
 
     def to_bytes(self):
-        return struct.pack("<B" + "B" * len(self.values),
-            *([self.ID] + self.values))
+        return struct.pack("<BBB" + "B" * len(self.values),
+            *([self.ID, self.group_id, self.setting] + self.values))
 
 class GpioControlMsg(PurpleDropMessage):
     ID = 14
