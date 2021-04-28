@@ -3,6 +3,12 @@ import versioneer
 
 setup(
     name="purpledrop",
+    description="Driver software for controlling PurpleDrop digital microfluidic devices",
+    long_description="""Provides bridge to control PurpleDrop USB device via HTTP API
+or via  a browser based UI""",
+    author="Jeff McBride",
+    author_email="mcbridej@cs.washington.edu",
+    url="https://github.com/uwmisl/purpledrop-driver",
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     packages=find_packages(),
