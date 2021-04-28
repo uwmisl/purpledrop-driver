@@ -1,4 +1,5 @@
 import json
+import numpy as np
 import os
 import pkg_resources
 import re
@@ -109,7 +110,7 @@ class Layout(object):
         if 'peripherals' in layout_def:
             self.peripherals = [load_peripheral(p, layout_def.get('peripheral_templates', None)) for p in layout_def['peripherals']]
 
-    def grid_location_to_pin(self, x, y, grid_number=0):
+    def grid_location_to_pin(self, x: int, y: int, grid_number:int =0):
         """Return the pin number at given grid location, or None if no pin is 
         defined there.
         """
@@ -123,6 +124,40 @@ class Layout(object):
         if x < 0 or x >= len(row):
             return None
         return grid[y][x]
+
+    def pin_to_grid_location(self, pin: int) -> Optional[Tuple[Tuple[int, int], int]]:
+        """Return the grid location of a given pin number
+        """
+        for g, grid in enumerate(self.grids):
+            for y, row in enumerate(grid['pins']):
+                for x, p in enumerate(row):
+                    if p == pin:
+                        return ((x, y), g)
+        return None
+
+    def pin_polygon(self, pin: int) -> Optional[List[Tuple[int, int]]]:
+        """Get the polygon defining a pin in board coordinates
+        """
+        # Try to find the pin in a grid
+        grid_info = self.pin_to_grid_location(pin)
+        if grid_info is not None:
+            loc, grid_idx = grid_info
+            square = np.array([[0., 0.], [0., 1.], [1., 1.], [1., 0.]])
+            grid = self.grids[grid_idx]
+            polygon = (square + loc) * grid['pitch'] + grid['origin']
+            return polygon.tolist()
+        # Try to find the pin in a peripheral
+        if self.peripherals is None:
+            return None
+        for periph in self.peripherals:
+            for el in periph['electrodes']:
+                if el['pin'] == pin:
+                    polygon = np.array(el['polygon'])
+                    rotation = np.deg2rad(periph.get('rotation', 0.0))
+                    R = np.array([[np.cos(rotation), -np.sin(rotation)], [np.sin(rotation), np.cos(rotation)]])
+                    polygon = np.dot(R, polygon.T).T
+                    return (polygon + periph['origin']).tolist()
+        return None
 
     def as_dict(self) -> dict:
         """Return a serializable dict version of the board definition
