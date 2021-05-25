@@ -7,14 +7,22 @@ from typing import Any, AnyStr, Dict, List, Optional, Tuple
 
 
 def load_peripheral(pdata, templates=None):
+    """Load a peripheral from a dict
 
+    This loads a peripheral with support for templates, as used in the board
+    definition file format
+
+    Args:
+        pdata: A dict containing the peripheral definition
+        templates: A dict mapping types to template definitions
+    """
     if not 'type' in pdata:
         raise ValueError("Peripheral definition requires a type field")
 
     template = None
     if templates is not None and pdata['type'] in templates:
         template = templates[pdata['type']]
-    
+
     periph = pdata
 
     # Override electrodes with fields from template
@@ -33,10 +41,12 @@ def load_peripheral(pdata, templates=None):
     return periph
 
 class Fiducial(object):
+    """Represents a fiducial location
+    """
     def __init__(self, corners: List[List[int]], label: str=""):
         self.corners = corners
         self.label = label
-    
+
     @staticmethod
     def from_dict(data):
         return Fiducial(**data)
@@ -48,6 +58,12 @@ class Fiducial(object):
         }
 
 class ControlPoint(object):
+    """Represents a control point in an image
+
+    A control point is a pair of corresponding points -- one in image coordinates
+    and the other in grid coordinates -- used to calibrate the position of
+    the electrode grid relative to fiducials.
+    """
     def __init__(self, grid_coord: Tuple[float, float], image_coord: Tuple[float, float]):
         self.grid = grid_coord
         self.image = image_coord
@@ -61,6 +77,9 @@ class ControlPoint(object):
         return ControlPoint(data['grid'], data['image'])
 
 class Registration(object):
+    """A registration is a collection of fiducials and control points which
+    together define relationship between the electrode locations and fiducials
+    """
     def __init__(self, data: dict):
         if not 'fiducials' in data:
             raise ValueError(f'A Registration requires a fiducials attribute, not found in: {data}')
@@ -75,6 +94,11 @@ class Registration(object):
         self.control_points = [ControlPoint.from_dict(cp) for cp in data['control_points']]
 
 class Layout(object):
+    """Represents the 'layout' property of a baord definition
+
+    A layout defines the placement and pin mapping for the electrodes on the
+    board.
+    """
     def __init__(self, layout_def: Dict[str, Any]):
         self.peripherals = None
         self.grids = []
@@ -111,7 +135,7 @@ class Layout(object):
             self.peripherals = [load_peripheral(p, layout_def.get('peripheral_templates', None)) for p in layout_def['peripherals']]
 
     def grid_location_to_pin(self, x: int, y: int, grid_number:int =0):
-        """Return the pin number at given grid location, or None if no pin is 
+        """Return the pin number at given grid location, or None if no pin is
         defined there.
         """
         if grid_number < len(self.grids):
@@ -168,7 +192,7 @@ class Layout(object):
         }
 
 class Board(object):
-    """Represents top-level object in an electrode board definition file
+    """Represents the top-level object in an electrode board definition file
     """
     def __init__(self, board_def: Dict[str, Any]):
         self.registration: Optional[Registration] = None
@@ -181,26 +205,32 @@ class Board(object):
 
     @staticmethod
     def load_from_file(filepath):
+        """Create a Board from a board definition file
+        """
         with open(filepath, 'r') as f:
             data = json.loads(f.read())
             return Board(data)
 
     @staticmethod
     def load_from_string(data: AnyStr) -> 'Board':
+        """Create a board from a JSON string in memory
+        """
         return Board(json.loads(data))
 
     def as_dict(self) -> dict:
+        """Return a serializable dict representation of the board
+        """
         return {
             'layout': self.layout.as_dict(),
             'oversized_electrodes': self.oversized_electrodes,
         }
 
 def list_boards():
-    """Find all available board definitions. 
+    """Find all available board definitions.
 
-    Uses same search rules as load_board; see :func:`load_board`. 
+    Uses same search rules as load_board; see :func:`load_board`.
 
-    Returns: 
+    Returns:
         A list of board names, which can be passed to `load_board`
     """
     config_dir = os.path.expanduser("~/.config/purpledrop/boards")
@@ -209,7 +239,7 @@ def list_boards():
         config_files = os.listdir(config_dir)
     else:
         config_files = []
-    
+
     board_names = []
     def add_files(files):
         for f in files:
@@ -221,13 +251,13 @@ def list_boards():
     # Config files take priority, if there are any duplicates
     add_files(package_files)
     add_files(config_files)
-    
+
     return board_names
 
 def load_board(name) -> Optional[Board]:
     """Load a board definition by name or path
 
-    Attempt to load a board definition from the name, using the following 
+    Attempt to load a board definition from the name, using the following
     priorities (the first to succeed is returned):
 
     1. Load as a full path
@@ -237,11 +267,11 @@ def load_board(name) -> Optional[Board]:
 
     if os.path.isfile(name):
         return Board.load_from_file(name)
-    
+
     home_path = os.path.expanduser(f"~/.config/purpledrop/boards/{name}.json")
     if os.path.isfile(home_path):
         return Board.load_from_file(home_path)
-    
+
     try:
         resource_data = pkg_resources.resource_string('purpledrop', f"boards/{name}.json")
         return Board.load_from_string(resource_data)

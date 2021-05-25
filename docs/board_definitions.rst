@@ -12,7 +12,7 @@ File Structure
 
 A board definition is a JSON file, with the following structure: 
 
-.. code-block:: json
+.. code-block:: javascript
 
   {
     "layout": {
@@ -25,7 +25,7 @@ A board definition is a JSON file, with the following structure:
       "fiducials": <array of fiducial objects>,
       "control_points": <array of control point objects>
     },
-    oversized_electrodes: [],
+    "oversized_electrodes": [],
   }
 
 The format of the sub-elements are discussed below. 
@@ -52,7 +52,7 @@ origin is assumed to be (0, 0).
 
 A old format grid is simply a 2D list of pin numbers: 
 
-.. code-block:: json
+.. code-block:: javascript
   
   "grid": [
     [14, 15, 11, 16, 17, 111, 110, 96, 112, 113],
@@ -73,7 +73,7 @@ A old format grid is simply a 2D list of pin numbers:
 A new format grid object includes the same array of pins, as well as additional
 info alongside:
 
-.. code-block:: json
+.. code-block:: javascript
 
   "grids": [
     {
@@ -109,7 +109,7 @@ which supports multiple instances of a common reservoir type.
 
 Here is an example of a peripheral definition:
 
-.. code-block:: json
+.. code-block:: javascript
 
   "peripherals": [
     {
@@ -135,7 +135,7 @@ Here is an example of a peripheral definition:
     }
   ]
 
-Peripheral templates allow for some simplification of the JSON file when there
+Peripheral templates allow for some simplification of the javascript file when there
 are multiple peripherals with the same electrode shapes. In this case, the
 electrode polygons can be defined once in a template, and then each peripheral
 definition can be shorted to only include the unique attributes of the electrode,
@@ -144,7 +144,7 @@ are mostly useful if you plan to edit your polygons vertices by hand.
 
 The same peripheral above could be created with a template like this:
 
-.. code-block:: json
+.. code-block:: javascript
 
   "peripheral_templates": {
     "reservoirC": {
@@ -190,7 +190,7 @@ it is recommended to use a unique set of labels for any custom electrode boards.
 
 Here's an example of a registration object: 
 
-.. code-block: json
+.. code-block: javascript
 
   "registration": {
     "fiducials": [ 

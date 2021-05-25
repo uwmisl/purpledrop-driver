@@ -16,6 +16,11 @@ import purpledrop.server as server
 @click.option('--board', 'board_file', help='Board name or path to board definition JSON file', default='misl_v4')
 @click.option('--replay', 'replay_file', help='Launch replay server instead of connecting to HW', required=False)
 def main(verbose, board_file, replay_file):
+    """Runs hardware gateway
+
+    Will auto-connect to any detected purpledrop USB devices, and provides HTTP interfaces for control.
+    Optionally, supports replay mode in which a recorded event stream is played back
+    """
     if verbose == 0:
         console_log_level = logging.WARNING
     elif verbose == 1:

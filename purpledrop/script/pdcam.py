@@ -94,6 +94,11 @@ def load_registration(filepath):
 @click.option('--board', required=False, help="Force usage of a particular electrode board (overrides auto detection)")
 @click.option('--flip', is_flag=True, default=False)
 def server(registration, board, flip):
+    """Runs camera server process used to provide gateway to captured images
+    and fiducial locations.
+
+    Serves HTTP API on port 5000, which can be used by `pdserver`.
+    """
     from purpledrop.pdcam.server import create_app
 
     board_name = board
@@ -151,7 +156,8 @@ def overlay(reference, imagefile):
 @click.option('--point', 'points', multiple=True, help="Control points in grid coordinates: 'x, y'")
 @click.option('-v', '--verbose', is_flag=True, help='verbose output')
 def measure(imagefile, outfile, v4, v4_1, v5, layout, points, verbose):
-    """Launch UI to make calibration measurements from image
+    """Launch UI to make calibration measurements from an image of an
+    electrode board.
     """
 
     # TODO: Instead of hardcoding the layouts, load the electrode layout from

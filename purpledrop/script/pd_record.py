@@ -23,6 +23,8 @@ async def record(uri, filepath, verbose):
 @click.option('-v', '--verbose', is_flag=True, default=False)
 @click.argument('filename', required=True)
 def main(host, filename, verbose):
+    """Records the event stream to a file.
+    """
     asyncio.run(record(host, filename, verbose))
 
 if __name__ == '__main__':
