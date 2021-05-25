@@ -1,4 +1,4 @@
-# pdcam
+# pdcam module
 
 The `pdcam` module provides camera support for the purpledrop. It provides
 video capture, as well as fiducial detection for image registration. 

@@ -37,7 +37,10 @@ extensions = [
     'sphinx_click',
 ]
 
-# Suppress duplicaate label warnings
+# Mock some heavy libraries so they don't have to be installed to build docs
+autodoc_mock_imports = ['numpy', 'cv2']
+
+# Suppress duplicate label warnings
 suppress_warnings = ['autosectionlabel.*']
 
 # Add any paths that contain templates here, relative to this directory.
