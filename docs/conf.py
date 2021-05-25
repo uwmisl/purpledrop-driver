@@ -15,6 +15,39 @@ import sys
 sys.path.insert(0, os.path.abspath('..'))
 
 
+# -- Import Mocking ----------------------------------------------------------
+
+# Mock some dependencies. Sphinx offers the autodoc_mock_imports config
+# option for this, but that does not mock for sphinx-click extension.
+# This is more global.
+
+import mock
+
+MOCK_MODULES = [
+    'apriltag',
+    'cv2',
+    'flask',
+    'gevent',
+    'gevent.pywsgi',
+    'geventwebsocket',
+    'geventwebsocket.exceptions',
+    'jsonrpc',
+    'jsonrpc.backend',
+    'jsonrpc.backend.flask',
+    'matplotlib',
+    'matplotlib.collections',
+    'matplotlib.patches',
+    'matplotlib.pyplot',
+    'numpy',
+    'serial',
+    'serial.tools',
+    'serial.tools.list_ports',
+    'websockets',
+]
+for mod_name in MOCK_MODULES:
+    sys.modules[mod_name] = mock.Mock()
+
+
 # -- Project information -----------------------------------------------------
 
 project = 'PurpleDrop Driver'
@@ -36,9 +69,6 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx_click',
 ]
-
-# Mock some heavy libraries so they don't have to be installed to build docs
-autodoc_mock_imports = ['apriltag', 'numpy', 'cv2']
 
 # Suppress duplicate label warnings
 suppress_warnings = ['autosectionlabel.*']

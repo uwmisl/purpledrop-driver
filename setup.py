@@ -20,6 +20,7 @@ setup(
         'gevent-websocket~=0.10',
         'flask~=1.1',
         'json-rpc~=1.13',
+        'protobuf',
         'pyserial',
         'requests',
     ],
