@@ -21,6 +21,11 @@ The `pdrecord` executable can be used to record the eventstream during experimen
 
 Clone the repository, and run `pip install .`.
 
+## Documentation
+
+Documentation for this project is compiled using sphinx, lives in the `docs`
+directory, and is hosted at <https://purpledrop-driver.readthedocs.io>.
+
 ## Rebuilding protobuf messages
 
 purpledrop/protobuf/messages_pb2.py is auto-generated from `protobuf/messages.proto`. If the message definitions are changed, it needs to be updated manually by running:
