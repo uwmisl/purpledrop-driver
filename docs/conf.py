@@ -38,7 +38,7 @@ extensions = [
 ]
 
 # Mock some heavy libraries so they don't have to be installed to build docs
-autodoc_mock_imports = ['numpy', 'cv2']
+autodoc_mock_imports = ['apriltag', 'numpy', 'cv2']
 
 # Suppress duplicate label warnings
 suppress_warnings = ['autosectionlabel.*']
