@@ -26,7 +26,7 @@ altogether if you do not require video.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Contents
    
    commands
    board_definitions
