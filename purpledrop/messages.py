@@ -1,3 +1,6 @@
+"""Defines messages transmitted between purpledrop microcontroller and driver
+via the USB channel
+"""
 import struct
 from typing import Optional, Sequence, Type, Union
 

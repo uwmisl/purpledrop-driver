@@ -8,6 +8,9 @@ from typing import AnyStr
 import purpledrop.protobuf.messages_pb2 as messages_pb2
 
 class VideoClient(object):
+    """A VideoClient collects images and transform matrices from a pdcam
+    server and provides them to a consumer via the registered callback.
+    """
     def __init__(self, host: str, callback=None):
         self.host = host
         self.callback = callback

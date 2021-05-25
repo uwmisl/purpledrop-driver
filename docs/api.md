@@ -1,20 +1,24 @@
-# APIs for controlling Purple Drop
+# HTTP APIs
 
-The Purple Drop software provides a [JSON-RPC](www.jsonrpc.org) based api for controlling purpledrop, as well as a WebSocket event stream for getting asynchronous state updates.
+The Purple Drop software provides a [JSON-RPC](http://www.jsonrpc.org) based api for controlling purpledrop, as well as a WebSocket event stream for getting asynchronous state updates.
 
 ## RPC API
 
-The JSON RPC api is served via HTTP on port 80 of your purpledrop. For instructions on how to setup networking on your purple drop, see [PI Setup](pi-setup.md).
+The JSON RPC API is served via HTTP on port 7000, by the pdserver daemon. The
+endpoint for all RPC calls is `/rpc`. Most functions are not documented
+here, but you can get a list of the RPC functions available from the `/rpc/map`
+route on the HTTP server.
 
-The endpoint for all RPC calls is `/rpc`.
+There is a python library available for making calls to the RPC API:
+[pdclient](https://github.com/uwmisl/pdclient).
 
 ### Method: get_board_definition
 
-Retrieves the electrode board definition currently in use by the purple drop. This defines the layout of the electrode grid, and the mapping of grid positions to electrode pin numbers. 
+Retrieves the electrode board definition currently in use by the purple drop. This defines the layout of the electrode grid, and the mapping of grid positions to electrode pin numbers.
 
 #### Example Request
 
-```json
+```javascript
 POST /rpc
 {
     "method": "get_board_definition",
@@ -26,7 +30,7 @@ POST /rpc
 
 #### Example Response
 
-```json
+```javascript
 {
     "jsonrpc": "2.0",
     "result": {
@@ -63,7 +67,7 @@ Activate a subset of electrodes, any electrodes not in the list will be deactiva
 
 Activates electrodes 2, 80, and 100. All other electrodes are de-activated.
 
-```json
+```javascript
 POST /rpc
 {
     "method": "set_electrode_pins",
@@ -75,37 +79,20 @@ POST /rpc
 
 #### Example Response
 
-```json
+```javascript
 {"jsonrpc": "2.0", "result": null, "id": 0}
 ```
 
-### Method: move_drop
+## Websocket Event Stream
 
-Perform a move operation on a drop.
+The websocket event stream is available on port 7001. Any clients connected to
+this websocket server will receive a stream of protobuf messages, as defined in
+`protobof/messages.proto`.
 
-**Parameters**:
+The event stream is used by the javascript UI for rapid state updates, and also
+makes a useful stream for recording which interleaves state changes (e.g.
+turning electrodes on and off, capacitance measurements, etc) with video frames.
 
-- *size*: A 2-tuple giving the x and y size of the drop being moved. Example: (2, 2) for a 2x2 square.
-
-- *start*: A 2-tuple giving the starting position of the top-left corner of the drop.
-
-- *direction*: One of, "up", "down", "left", or "right".
-
-**Returns**:
-
-- error: None on success, or string indicating error
-
-- initial_c: Capacitance measured before drop move
-
-- final_c: Capacitance measured after move
-
-- duration: Total time, in seconds to perform the move
-
-- series: Object
-
-    ```
-    {
-        time: Array of time points
-        c: Array of corresponding capacitance values
-    }
-    ```
+The [pdrecord](pdrecord) command saves the stream to file. For an example of python
+code to parse the event stream, see `purpledrop/scripts/pd_log.py` in the project
+repository.

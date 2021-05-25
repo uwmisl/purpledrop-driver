@@ -54,6 +54,10 @@ def extract_video(logfile, outfile):
 @click.option('--video', type=str, help="Extract video frames from log")
 @click.argument('logfile', required=True)
 def main(video, logfile):
+    """A utility for processing log files
+
+    Currently provides only the --video flag, which can be used to extract the video frames from the log file.
+    """
     if video is not None:
         print(f"Extracting video to {video}")
         extract_video(logfile, video)
