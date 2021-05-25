@@ -1,3 +1,5 @@
+"""Provides helper functions for plotting features
+"""
 import cv2
 import numpy as np
 from matplotlib.collections import PatchCollection
@@ -57,6 +59,12 @@ def plot_template(ax, layout, highlights=None, transform=None):
     return
 
 def mark_fiducial(img, polygon):
+    """Utility to draw the location of a fiducial on an image
+
+    Args:
+        img: An RGB image (np array) to be marked
+        polygon: A list of four 2-d points marking the corners of the fiducial
+    """
     p = [(int(p[0]), int(p[1])) for p in polygon]
     cv2.line(img, (p[0][0], p[0][1]), (p[1][0], p[1][1]), (0, 0, 255), 2)
     cv2.line(img, (p[1][0], p[1][1]), (p[2][0], p[2][1]), (0, 0, 255), 2)

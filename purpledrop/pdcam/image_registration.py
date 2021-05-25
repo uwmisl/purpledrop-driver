@@ -62,6 +62,14 @@ def enhance(image):
     return image
 
 def find_fiducials(image):
+    """Find april tag fiducials in an image and return them"
+
+    Args:
+        image: An image in numpy array
+
+    Returns:
+        A list of purpledrop.electrodeboard.Fiducial objects
+    """
     detector = apriltag.Detector()
     result = detector.detect(enhance(image))
 

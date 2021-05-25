@@ -2,7 +2,7 @@
 *.bak
 *~
 *.tmp
-
+*.swp
 .DS_Store
 
 # Python files
@@ -14,3 +14,6 @@ dist
 
 # JS files
 yarn-error.log
+
+# Sphinx outputs
+docs/_build

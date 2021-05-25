@@ -22,6 +22,8 @@ def main():
 
 @main.command()
 def info():
+    """Get device information from a connected purpledrop
+    """
     device = get_device()
     port = device.device
     print(f"Connecting to {port}")
