@@ -16,6 +16,9 @@ function getDisplaySize(size, electrodeAspectRatio) {
   } else {
       displayHeight = displayWidth / electrodeAspectRatio;
   }
+  if(isNaN(displayHeight)) {
+    displayHeight = 10;
+  }
   return {width: displayWidth, height: displayHeight};
 }
 

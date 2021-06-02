@@ -32,7 +32,10 @@ let DraggableBox = (props) => {
 
 DraggableBox.propTypes = {
   title: PropTypes.string,
-  children: PropTypes.arrayOf(PropTypes.element),
+  children: PropTypes.oneOfType([
+    PropTypes.arrayOf(PropTypes.element),
+    PropTypes.object,
+  ]),
 };
 
 export default DraggableBox;

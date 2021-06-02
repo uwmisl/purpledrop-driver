@@ -171,7 +171,10 @@ class LiveView extends React.Component {
             <div id='liveview-content-box' style={contentBoxStyle}>
                 <SizeMe monitorHeight>
                     {({size}) => {
-                        const {width, height} = getDisplaySize(size, {width: this.props.imageWidth, height: this.props.imageHeight});
+                        let {width, height} = getDisplaySize(size, {width: this.props.imageWidth, height: this.props.imageHeight});
+                        if(isNaN(height)) {
+                            height = 10;
+                        }
                         return <div style={{ position: 'relative', height: '100%' }}>
                             <div style={{position: 'absolute', width: width, height: height }}>
                                 <img
