@@ -10,7 +10,8 @@ class Parameter extends React.Component {
     this.updateLocalValue = this.updateLocalValue.bind(this);
   }
 
-  onSave() {
+  onSave(e) {
+    e.preventDefault();
     if(this.props.onSave) {
       this.setState({message: "Saving..."});
       this.props.onSave(this.props.id).then(
