@@ -54,7 +54,7 @@ class Parameter extends React.Component {
     }
 
     return <form className={this.props.dirty ? "dirty" : ""} action="#" onSubmit={this.onSave}>
-      <label>
+      <label data-for="tooltip" data-tip={this.props.description}>
         {this.props.name} {input}
       </label>
       <button type="submit">Save</button>
