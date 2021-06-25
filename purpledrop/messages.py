@@ -130,6 +130,7 @@ class DataBlobMsg(PurpleDropMessage):
 
     # Types of blob data that can be requested
     SOFTWARE_VERSION_ID = 0
+    OFFSET_CALIBRATION_ID = 1
 
     def __init__(self, fill_data: Optional[bytes]=None):
         if fill_data is not None:
