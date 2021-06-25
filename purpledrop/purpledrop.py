@@ -4,6 +4,7 @@ import inspect
 import fnmatch
 import logging
 import queue
+import struct
 import serial
 import serial.tools.list_ports
 import sys
@@ -406,6 +407,9 @@ class PurpleDropController(object):
         'get_device_info',
         'read_gpio',
         'write_gpio',
+        'set_scan_gains',
+        'get_scan_gains',
+        'set_electrode_calibration',
     ]
 
     def __init__(self, purpledrop, board_definition):
@@ -497,17 +501,25 @@ class PurpleDropController(object):
                 break
         self.parameter_list = descriptors
 
-    def __set_scan_gains(self):
-        """Setup low gain during scan for large electrodes
+    def __set_scan_gains(self, gains: Sequence[bool]=None):
+        """Setup gains used for capacitance scan
+
+        If no gains are provided, the gains will be set based on the "oversized"
+        electrodes defined in the active board definition. Any oversized
+        electrodes are set to low gain, and the rest to high gain.
+
+        Args:
+          gains: A list of booleans. True indicates low gain should be used for
+          the corresponding electrode
         """
-        gains = [0] * N_PINS
-        self.scan_gains = [CAPGAIN_HIGH] * N_PINS
-        for pin in self.board_definition.oversized_electrodes:
-            gains[pin] = 1 # low gain
-            self.scan_gains[pin] = CAPGAIN_LOW
+        if gains is None:
+            gains = [False] * N_PINS
+            for pin in self.board_definition.oversized_electrodes:
+                gains[pin] = True # low gain
+        self.scan_gains = list(map(lambda x: CAPGAIN_LOW if x else CAPGAIN_HIGH, gains))
 
         msg = messages.SetGainMsg()
-        msg.gains = gains
+        msg.gains = list(map(lambda x: 1 if x else 0, gains))
         listener = self.purpledrop.get_sync_listener(messages.CommandAckMsg)
         self.purpledrop.send_message(msg)
         ack = listener.wait(timeout=1.0)
@@ -693,7 +705,7 @@ class PurpleDropController(object):
                 value = resp.param_value_float()
             else:
                 value = resp.param_value_int()
-            logger.info(f"get_parameter({paramIdx}) returning {value}")
+            logger.debug(f"get_parameter({paramIdx}) returning {value}")
             return value
 
     def set_parameter(self, paramIdx, value):
@@ -800,8 +812,6 @@ class PurpleDropController(object):
         msg.setting = setting
         msg.values = pinlist2mask(pins)
         self.purpledrop.send_message(msg)
-
-        logger.warning(f"Sending capacitance group {group_id} with {pins}")
 
         # Update local state
         self.pin_state.scan_groups[group_id] = PinState.ScanGroup(pinlist2bool(pins), setting)
@@ -994,3 +1004,60 @@ class PurpleDropController(object):
             raise TimeoutError("No response from purpledrop to GPIO read request")
         else:
             return rxmsg.value
+
+    def set_electrode_calibration(self, voltage: float, offsets: Sequence[int]):
+        """Set the capacitance offset for each electrode
+
+        Provides a table of values to be subtracted for each electrode to
+        compensate for parasitic capacitance of the electrode. Values are
+        measured at high gain, with no liquid on the device, at a certain
+        voltage.
+
+        These values will be adjusted for changes in voltage from the measured
+        voltage, and for low gain when applied by the purpledrop.
+
+        Arguments:
+          - voltage: The voltage setting at which the offsets were measured
+          - offsets: A list of 128 16-bit values to be subtracted
+
+        Returns: None
+        """
+        offsets = list(map(int, offsets))
+        table = struct.pack("<f128H", voltage, *offsets)
+
+        tx_pos = 0
+        while tx_pos < len(table):
+            tx_size = min(64, len(table) - tx_pos)
+            msg = messages.DataBlobMsg()
+            msg.blob_id = msg.OFFSET_CALIBRATION_ID
+            msg.chunk_index = tx_pos
+            msg.payload_size = tx_size
+            msg.payload = table[tx_pos:tx_pos+tx_size]
+            tx_pos += tx_size
+            listener = self.purpledrop.get_sync_listener(messages.CommandAckMsg)
+            self.purpledrop.send_message(msg)
+            ack = listener.wait(timeout=0.5)
+            if ack is None:
+                raise TimeoutError("No ACK while setting electrode calibration")
+
+    def set_scan_gains(self, gains: Optional[Sequence[bool]]=None):
+        """Set the gains used for capacitance scan measurement
+
+        If no gains argument is provided, scan gains will be set based on
+        oversized electrodes defined in the board definition file.
+
+        Arguments:
+          - gains: A list of 128 booleans, true indicating that an electrode
+            should be scanned with low gain
+        """
+        if gains is not None:
+            if len(gains) != 128:
+                raise ValueError("Scan gains must have 128 values")
+            # Make sure they are all convertible to bool
+            gains = [bool(x) for x in gains]
+        self.__set_scan_gains(gains)
+
+    def get_scan_gains(self) -> List[bool]:
+        """Return the current scan gain settings
+        """
+        return self.scan_gains
