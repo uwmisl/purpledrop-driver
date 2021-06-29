@@ -12,6 +12,8 @@ import threading
 import time
 from typing import Any, AnyStr, Callable, Dict, List, Optional, Sequence
 
+from purpledrop.calibration import ElectrodeOffsetCalibration
+from purpledrop.electrode_board import Board
 import purpledrop.messages as messages
 import purpledrop.protobuf.messages_pb2 as messages_pb2
 from .messages import PurpleDropMessage, ElectrodeEnableMsg, SetPwmMsg
@@ -412,22 +414,23 @@ class PurpleDropController(object):
         'set_electrode_calibration',
     ]
 
-    def __init__(self, purpledrop, board_definition):
+    def __init__(self, purpledrop, board_definition: Board, electrode_calibration: Optional[ElectrodeOffsetCalibration]=None):
         self.purpledrop = purpledrop
         self.board_definition = board_definition
 
         self.active_capacitance = 0.0
-        self.raw_scan_capacitance = []
-        self.calibrated_scan_capacitance = []
-        self.raw_group_capacitance = []
-        self.calibrated_group_capacitance = []
+        self.electrode_calibration = electrode_calibration
+        self.raw_scan_capacitance: List[float] = []
+        self.calibrated_scan_capacitance: List[float] = []
+        self.raw_group_capacitance: List[float] = []
+        self.calibrated_group_capacitance: List[float] = []
         self.scan_gains = [1.0] * N_PINS
         self.temperatures: Sequence[float] = []
-        self.duty_cycles = {}
+        self.duty_cycles: Dict[int, float] = {}
         self.hv_supply_voltage = 0.0
-        self.parameter_list = []
+        self.parameter_list: List[dict] = []
         self.lock = threading.Lock()
-        self.event_listeners = []
+        self.event_listeners: List[Callable] = []
         self.active_capacitance_counter = 0
         self.group_capacitance_counter = 0
         self.duty_cycle_updated_counter = 0
@@ -469,6 +472,9 @@ class PurpleDropController(object):
             self.purpledrop.connected_serial_number() or '',
             software_version or ''
         )
+        if self.electrode_calibration is not None:
+            logger.info("Loading electrode calibration")
+            self.set_electrode_calibration(self.electrode_calibration.voltage, self.electrode_calibration.offsets)
 
     def __on_disconnected(self):
         self.__send_device_info_event(False, '', '')
@@ -554,7 +560,7 @@ class PurpleDropController(object):
                 self.group_capacitance_counter += 1
                 if (self.group_capacitance_counter % 10) == 0:
                     self.raw_group_capacitance = msg.measurements
-                    self.calibrated_group_capacitance = [0] * len(self.raw_group_capacitance)
+                    self.calibrated_group_capacitance = [0.0] * len(self.raw_group_capacitance)
                     for i in range(msg.count):
                         if self.pin_state.scan_groups[i].setting == 0:
                             gain = CAPGAIN_HIGH
