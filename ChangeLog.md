@@ -1,5 +1,14 @@
 # Change Log
 
+## v0.5.0 (Jun 30, 2021)
+
+- Drops support for embedded software v0.4.x
+  - ActiveCapacitance message was updated to support low gain flag
+- Adds support for per-electrode capacitance offset calibration, loaded
+  automatically from a file or via the set_electrode_calibration RPC
+- Adds board definition for misl v6.1 board
+- Adds set_scan_gains and get_scan_gains RPCs
+
 ## v0.4.0 (Apr 28, 2021)
 
 - Supports embedded software v0.4.x
