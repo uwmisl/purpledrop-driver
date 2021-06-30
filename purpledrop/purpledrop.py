@@ -1069,4 +1069,4 @@ class PurpleDropController(object):
     def get_scan_gains(self) -> List[bool]:
         """Return the current scan gain settings
         """
-        return self.scan_gains
+        return [x == CAPGAIN_LOW for x in self.scan_gains]
