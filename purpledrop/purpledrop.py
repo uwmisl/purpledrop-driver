@@ -24,7 +24,7 @@ logger = logging.getLogger("purpledrop")
 
 # Versions of purpledrop software supported by this driver
 SUPPORTED_VERSIONS = [
-    "v0.4.*",
+    "v0.5.*",
 ]
 
 # List of USB VID/PID pairs which will be recognized as a purpledrop
@@ -541,8 +541,11 @@ class PurpleDropController(object):
         
     def __message_callback(self, msg):
         if isinstance(msg, messages.ActiveCapacitanceMsg):
-            # Active capacitance is always measured with high gain for now
-            self.active_capacitance = self.__calibrate_capacitance(msg.measurement - msg.baseline, CAPGAIN_HIGH)
+            # TODO: I-sense resistor values are adjustable, and the
+            # CAPGAIN_HIGH/CAPGAIN_LOW should be gotten from the device at some
+            # point, rather than duplicated here
+            capgain = CAPGAIN_LOW if (msg.settings & 1 == 1) else CAPGAIN_HIGH
+            self.active_capacitance = self.__calibrate_capacitance(msg.measurement - msg.baseline, capgain)
             self.active_capacitance_counter += 1
             # Throttle the events. 500Hz messages is a lot for the browser to process.
             # This also means logs don't have a full resolution, and it would be better

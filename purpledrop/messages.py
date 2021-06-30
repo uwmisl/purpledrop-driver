@@ -44,16 +44,17 @@ class ActiveCapacitanceMsg(PurpleDropMessage):
         else:
             self.baseline = 0
             self.measurement = 0
+            self.settings = 0
 
     @staticmethod
     def predictSize(buf: bytes) -> int:
-        return 5
+        return 6
 
     def fill(self, fill_data):
-        self.baseline, self.measurement = struct.unpack_from("<HH", fill_data, 1)
+        self.baseline, self.measurement, self.settings = struct.unpack_from("<HHB", fill_data, 1)
 
     def __str__(self):
-        return f"ActiveCapacitanceMsg(baseline={self.baseline}, measurement={self.measurement})"
+        return f"ActiveCapacitanceMsg(baseline={self.baseline}, measurement={self.measurement}, settings={self.settings})"
 
 class BulkCapacitanceMsg(PurpleDropMessage):
     ID = 2
