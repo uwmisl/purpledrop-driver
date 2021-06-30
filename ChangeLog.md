@@ -2,6 +2,7 @@
 
 ## v0.5.0 (Jun 30, 2021)
 
+- Add support for low-gain active capacitance measurement
 - Drops support for embedded software v0.4.x
   - ActiveCapacitance message was updated to support low gain flag
 - Adds support for per-electrode capacitance offset calibration, loaded
