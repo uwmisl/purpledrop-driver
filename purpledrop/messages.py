@@ -39,12 +39,11 @@ class ActiveCapacitanceMsg(PurpleDropMessage):
     ID = 3
 
     def __init__(self, fill_data: Optional[bytes]=None):
+        self.baseline = 0
+        self.measurement = 0
+        self.settings = 0
         if fill_data is not None:
             self.fill(fill_data)
-        else:
-            self.baseline = 0
-            self.measurement = 0
-            self.settings = 0
 
     @staticmethod
     def predictSize(buf: bytes) -> int:
@@ -60,13 +59,12 @@ class BulkCapacitanceMsg(PurpleDropMessage):
     ID = 2
 
     def __init__(self, fill_data: Optional[bytes]=None):
+        self.group_scan = 0
+        self.start_index = 0
+        self.count = 0
+        self.measurements: Sequence[int] = []
         if fill_data is not None:
             self.fill(fill_data)
-        else:
-            self.group_scan = 0
-            self.start_index = 0
-            self.count = 0
-            self.measurements: Sequence[int] = []
 
     @staticmethod
     def predictSize(buf: bytes) -> int:
@@ -109,10 +107,9 @@ class CommandAckMsg(PurpleDropMessage):
     ID = 4
 
     def __init__(self, fill_data: Optional[bytes]=None):
+        self.acked_id = 0
         if fill_data is not None:
             self.fill(fill_data)
-        else:
-            self.acked_id = 0
 
     @staticmethod
     def predictSize(buf: bytes) -> int:
@@ -134,13 +131,12 @@ class DataBlobMsg(PurpleDropMessage):
     OFFSET_CALIBRATION_ID = 1
 
     def __init__(self, fill_data: Optional[bytes]=None):
+        self.blob_id = 0
+        self.chunk_index = 0
+        self.payload_size = 0
+        self.payload = bytes([])
         if fill_data is not None:
             self.fill(fill_data)
-        else:
-            self.blob_id = 0
-            self.chunk_index = 0
-            self.payload_size = 0
-            self.payload = bytes([])
 
     @staticmethod
     def predictSize(buf: bytes) -> int:
@@ -169,11 +165,10 @@ class DutyCycleUpdatedMsg(PurpleDropMessage):
     ID = 15
 
     def __init__(self, fill_data: Optional[bytes]=None):
+        self.duty_cycle_A = 0
+        self.duty_cycle_B = 0
         if(fill_data):
             self.fill(fill_data)
-        else:
-            self.duty_cycle_A = 0
-            self.duty_cycle_B = 0
 
     @staticmethod
     def predictSize(buf: bytes) -> int:
@@ -195,14 +190,13 @@ class FeedbackCommandMsg(PurpleDropMessage):
     DIFFERENTIAL = 2
 
     def __init__(self, fill_data: Optional[bytes]=None):
+        self.target = 0.0
+        self.mode = 0
+        self.input_groups_p_mask = 0
+        self.input_groups_n_mask = 0
+        self.baseline = 0
         if(fill_data):
             raise RuntimeError("Receiving FeedbackCommandMsg unimplemented")
-        else:
-            self.target = 0.0
-            self.mode = 0
-            self.input_groups_p_mask = 0
-            self.input_groups_n_mask = 0
-            self.baseline = 0
 
     def to_bytes(self) -> bytes:
         return struct.pack(
@@ -415,11 +409,10 @@ class SetPwmMsg(PurpleDropMessage):
     ID = 9
 
     def __init__(self, fill_data: Optional[bytes]=None):
+        self.chan = 0
+        self.duty_cycle = 0.0
         if fill_data is not None:
             self.fill(fill_data)
-        else:
-            self.chan = 0
-            self.duty_cycle = 0.0
 
     def fill(self, buf: bytes):
         raise RuntimeError("Not implemented")
@@ -431,10 +424,9 @@ class TemperatureMsg(PurpleDropMessage):
     ID = 7
 
     def __init__(self, fill_data: Optional[bytes]=None):
+        self.measurements: Sequence[int] = []
         if fill_data is not None:
             self.fill(fill_data)
-        else:
-            self.measurements: Sequence[int] = []
 
     @staticmethod
     def predictSize(buf: bytes) -> int:
@@ -463,19 +455,14 @@ class HvRegulatorMsg(PurpleDropMessage):
     ID = 8
 
     def __init__(self, fill_data: Optional[bytes]=None):
+        self.voltage = 0.0
+        self.v_target_out = 0
         if fill_data is not None:
             self.fill(fill_data)
-        else:
-            self.voltage = 0.0
-            self.v_target_out = 0
 
     @staticmethod
     def predictSize(buf: bytes) -> int:
         return 7
-        if(len(buf) < 2):
-            return 0
-        else:
-            return buf[1]*2 + 2
 
     def fill(self, buf: bytes):
         if len(buf) < 7:

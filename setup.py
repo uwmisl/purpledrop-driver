@@ -33,6 +33,7 @@ or via  a browser based UI""",
         'protobuf',
         'pyserial',
         'requests',
+        'schema',
     ],
     extras_require={
         'testing': [

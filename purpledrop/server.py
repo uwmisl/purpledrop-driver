@@ -19,7 +19,7 @@ import logging
 import pkg_resources
 import tarfile
 
-from .purpledrop import PurpleDropController
+from .controller import PurpleDropController
 
 logger = logging.getLogger('purpledrop')
 
