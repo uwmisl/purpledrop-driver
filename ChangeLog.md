@@ -1,5 +1,15 @@
 # Change Log
 
+## Pending
+
+- Add support for `move_drops` RPC, which moves up to five drops at once using
+  group capacitance as feedback and adds support for control of more move options,
+  including the gain to use, the timeout, and how much trailing data to collect
+  ("post_capture_time").
+- Changes move_drop to report calibrated capacitance in its return data
+- Change background threads to greenlets
+- Add simulation mode to pdserver with --sim argument
+
 ## v0.5.0 (Jun 30, 2021)
 
 - Add support for low-gain active capacitance measurement

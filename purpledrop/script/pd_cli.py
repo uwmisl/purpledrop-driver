@@ -1,7 +1,7 @@
 import click
 import sys
 
-from purpledrop.purpledrop import PurpleDropDevice, list_purpledrop_devices
+from purpledrop.purpledrop import SerialPurpleDropDevice, list_purpledrop_devices
 import purpledrop.messages as messages
 
 def get_device():
@@ -27,13 +27,13 @@ def info():
     device = get_device()
     port = device.device
     print(f"Connecting to {port}")
-    pd = PurpleDropDevice(port)
-    listener = pd.get_sync_listener(msg_filter=messages.DataBlobMsg)
-    versionRequest = messages.DataBlobMsg()
-    versionRequest.blob_id = messages.DataBlobMsg.SOFTWARE_VERSION_ID
-    pd.send_message(versionRequest)
-    msg = listener.wait(1.0)
     print(f"Serial number: {device.serial_number}")
+    pd = SerialPurpleDropDevice(port)
+    with pd.get_sync_listener(msg_filter=messages.DataBlobMsg) as listener:
+        versionRequest = messages.DataBlobMsg()
+        versionRequest.blob_id = messages.DataBlobMsg.SOFTWARE_VERSION_ID
+        pd.send_message(versionRequest)
+        msg = listener.next(1.0)
     if msg is None:
         print("Timeout waiting for version response")
     else:
