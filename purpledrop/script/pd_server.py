@@ -84,6 +84,7 @@ def main(verbose, board_file, replay_file, sim, electrode_calibration_file=None,
         drop_pins = [int(x) for x in sim.split(',')]
         pd_dev = SimulatedPurpleDropDevice(board, drop_pins)
         pd_control = PurpleDropController(pd_dev, board, ecal)
+        pd_dev.open()
     else:
         print("Launching HW server...")
         pd_dev = PersistentPurpleDropDevice()

@@ -23,6 +23,7 @@ logger = logging.getLogger("controller")
 # Versions of purpledrop software supported by this driver
 SUPPORTED_VERSIONS = [
     "v0.5.*",
+    "Simulated"
 ]
 
 def validate_version(v):
