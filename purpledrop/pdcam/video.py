@@ -10,14 +10,14 @@ from purpledrop.pdcam.plotting import mark_fiducial, mark_template
 
 class AsyncGridLocate(object):
     def __init__(self, grid_registration=None, callback=None, timeout_frames=3):
-        """A background thread for processing images to find fiducials, and 
+        """A background thread for processing images to find fiducials, and
         transform to map pixel coordinates to electrode board grid coordinates
 
         Args:
-            grid_registration: Optional `Registration` object. If provided, 
-            this overrides any registration found in the electrode board 
+            grid_registration: Optional `Registration` object. If provided,
+            this overrides any registration found in the electrode board
             database
-            callback: Function, taking two args (transform, fiducials) to be 
+            callback: Function, taking two args (transform, fiducials) to be
             called on each processed image
         """
         self.callback = callback
@@ -88,8 +88,8 @@ class Video(object):
         self.frame_number = 0
         self.grid_layout = grid_layout
         self.frames = [np.empty((self.WIDTH * self.HEIGHT * 3,), dtype=np.uint8) for _ in range(self.NBUFFER)]
-        self.frame_locks = [threading.Lock() for _ in range(self.NBUFFER)]
-        self.lock = threading.Lock()
+        self.frame_locks = [threading.RLock() for _ in range(self.NBUFFER)]
+        self.lock = threading.RLock()
         self.frame_cv = threading.Condition(self.lock)
         self.active_buffer = 0
         self.last_process_time = 0.0
@@ -124,7 +124,7 @@ class Video(object):
                     if cur_time - self.last_process_time > self.PROCESS_PERIOD:
                         self.last_process_time = cur_time
                         self.grid_finder.push(self.get_buffer(next_buffer).copy())
-                with self.lock:
+                with self.frame_cv:
                     self.active_buffer = next_buffer
                     self.frame_number += 1
                     self.frame_cv.notify_all()
