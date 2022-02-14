@@ -106,7 +106,6 @@ class Video(object):
             camera.resolution = (self.WIDTH, self.HEIGHT)
             camera.framerate = 30
             camera.iso = 60
-            camera.start_preview()
 
             time.sleep(2)
             gains = camera.awb_gains
