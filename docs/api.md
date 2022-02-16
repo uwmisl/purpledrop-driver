@@ -12,6 +12,12 @@ route on the HTTP server.
 There is a python library available for making calls to the RPC API:
 [pdclient](https://github.com/uwmisl/pdclient).
 
+.. note:: This document is incomplete
+
+  Not all API functions are included here yet -- in fact most are not. The most
+  up-to-date place to find all functions is at the `/rpc/map` route. Additionally,
+  most functions can be used via the client, and are [documented there](https://pdclient.readthedocs.io/en/latest/pdclient.html).
+
 ### Method: get_board_definition
 
 Retrieves the electrode board definition currently in use by the purple drop. This defines the layout of the electrode grid, and the mapping of grid positions to electrode pin numbers.

@@ -31,5 +31,6 @@ altogether if you do not require video.
    commands
    board_definitions
    calibration
+   simulated_device
    api
    reference/index

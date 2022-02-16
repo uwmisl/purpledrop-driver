@@ -6,7 +6,9 @@ This calibration accounts for the capacitance of each electrode when no liquid
 is present on the board. This capacitance depends on electrode size, trace
 length, distance of the top plate from the electrodes, etc. It is calibrated
 by measuring the capacitance of each electrode while empty, at high gain, at
-a voltage setting near where you intend to operate[^voltage].
+a voltage setting near where you intend to operate[^voltage]. Generally, this
+calibration can be done per electrode board design, and will be accurate 
+enough to use for all instances of that design.
 
 The calibration is loaded by the purpledrop-driver software to the device upon
 connecting. If a calibration file is stored in 
