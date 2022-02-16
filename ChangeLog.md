@@ -1,6 +1,6 @@
 # Change Log
 
-## Pending
+## v0.6.0 (Feb 16, 2022)
 
 - Add support for `move_drops` RPC, which moves up to five drops at once using
   group capacitance as feedback and adds support for control of more move options,
