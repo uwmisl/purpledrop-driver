@@ -2,6 +2,7 @@
 """
 from abc import abstractmethod, ABC
 import gevent
+import gevent.lock
 import inspect
 import logging
 import queue

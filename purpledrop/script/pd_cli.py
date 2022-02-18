@@ -1,4 +1,8 @@
+from gevent import monkey
+monkey.patch_all()
+
 import click
+import logging
 import sys
 
 from purpledrop.purpledrop import SerialPurpleDropDevice, list_purpledrop_devices
@@ -21,9 +25,25 @@ def main():
     pass
 
 @main.command()
-def info():
+@click.option('-v', '--verbose', count=True, help='-v for INFO, -vv for DEBUG')
+def info(verbose):
     """Get device information from a connected purpledrop
     """
+
+    if verbose == 0:
+        console_log_level = logging.WARNING
+    elif verbose == 1:
+        print("Setting stdout logging to INFO")
+        console_log_level = logging.INFO
+    else:
+        print("Setting stdout logging to DEBUG")
+        console_log_level = logging.DEBUG
+
+    logging.basicConfig(
+        format="%(asctime)s.%(msecs)03d %(levelname)s (%(name)s): %(message)s",
+        datefmt="%H:%M:%S",
+        level=console_log_level)
+
     device = get_device()
     port = device.device
     print(f"Connecting to {port}")
