@@ -678,12 +678,19 @@ class PurpleDropController(object):
         msg.values = pinlist2mask(pins)
 
         match = lambda m: isinstance(m, messages.CommandAckMsg) and m.acked_id == messages.ElectrodeEnableMsg.ID
-        with self.purpledrop.get_sync_listener(match) as listener:
-            self.purpledrop.send_message(msg)
-            ack = listener.next(timeout=0.25)
+
+        retries = 2
+        while retries > 0:
+            with self.purpledrop.get_sync_listener(match) as listener:
+                self.purpledrop.send_message(msg)
+                ack = listener.next(timeout=0.25)
+            if ack is not None:
+                break
+            retries -= 1
+
         if ack is None:
             logger.error("Received no ACK for set electrode pins")
-            raise TimeoutError("No ACK received")
+            raise TimeoutError("Received no ACK for set electrode pins")
 
         # Update local state
         self.pin_state.drive_groups[group_id] = PinState.DriveGroup(pinlist2bool(pins), duty_cycle)
