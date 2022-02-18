@@ -1,5 +1,10 @@
 # Change Log
 
+## PENDING
+
+- Fix bug in pdcli command: it was not doing gevent monkey patches.
+- Add retry on `set_electrode_pins` rpc.
+
 ## v0.6.0 (Feb 16, 2022)
 
 - Add support for `move_drops` RPC, which moves up to five drops at once using
