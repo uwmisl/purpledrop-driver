@@ -225,6 +225,17 @@ class PurpleDropController(object):
     def __on_disconnected(self):
         self.__send_device_info_event(False, '', '')
 
+    def __request_with_retry(self, msg_to_send, msg_listener, timeout=1.0, tries=3):
+        """Send a message, and wait for a listener to receive a response"""
+        while tries > 0:
+            tries -= 1
+            self.purpledrop.send_message(msg_to_send)
+            response = msg_listener.next(timeout=timeout)
+            if response is not None:
+                return response
+
+        return None
+
     def __ensure_device_connected(self):
         """Raises NoDeviceException unless there is a purpledrop connected
         """
@@ -246,7 +257,7 @@ class PurpleDropController(object):
             self.purpledrop.send_message(messages.ParameterDescriptorMsg())
             descriptors = []
             while True:
-                msg = listener.next(timeout=1.0)
+                msg = listener.next(timeout=2.0)
                 if msg is None:
                     logger.error("Timed out waiting for parameter descriptors")
                     break
@@ -280,8 +291,7 @@ class PurpleDropController(object):
         msg = messages.SetGainMsg()
         msg.gains = list(map(lambda x: 1 if x else 0, gains))
         with self.purpledrop.get_sync_listener(messages.CommandAckMsg) as listener:
-            self.purpledrop.send_message(msg)
-            ack = listener.next(timeout=1.0)
+            ack = self.__request_with_retry(msg, listener)
             if ack is None:
                 logger.error("Got no ACK for SetGains message")
 
@@ -557,8 +567,7 @@ class PurpleDropController(object):
         def msg_filter(msg):
             return isinstance(msg, messages.SetParameterMsg) and msg.param_idx() == paramIdx
         with self.purpledrop.get_sync_listener(msg_filter=msg_filter) as listener:
-            self.purpledrop.send_message(req_msg)
-            resp = listener.next(timeout=0.5)
+            resp = self.__request_with_retry(req_msg, listener, timeout=0.5)
         if resp is None:
             raise TimeoutError(f"No response from purpledrop to set parameter ({paramIdx})")
 
@@ -680,14 +689,8 @@ class PurpleDropController(object):
 
         match = lambda m: isinstance(m, messages.CommandAckMsg) and m.acked_id == messages.ElectrodeEnableMsg.ID
 
-        retries = 2
-        while retries > 0:
             with self.purpledrop.get_sync_listener(match) as listener:
-                self.purpledrop.send_message(msg)
-                ack = listener.next(timeout=0.25)
-            if ack is not None:
-                break
-            retries -= 1
+            ack = self.__request_with_retry(msg, listener, timeout=0.5)
 
         if ack is None:
             logger.error("Received no ACK for set electrode pins")
@@ -854,8 +857,7 @@ class PurpleDropController(object):
         msg.read = True
 
         with self.purpledrop.get_sync_listener(msg_filter=messages.GpioControlMsg) as listener:
-            self.purpledrop.send_message(msg)
-            rxmsg  = listener.next(0.5)
+            rxmsg = self.__request_with_retry(msg, listener, timeout=0.5)
         if rxmsg is None:
             raise TimeoutError("No response from purpledrop to GPIO read request")
         else:
@@ -881,8 +883,7 @@ class PurpleDropController(object):
         msg.output_enable = output_enable
 
         with self.purpledrop.get_sync_listener(msg_filter=messages.GpioControlMsg) as listener:
-            self.purpledrop.send_message(msg)
-            rxmsg = listener.next(0.5)
+            rxmsg = self.__request_with_retry(msg, listener, timeout=0.5)
         if rxmsg is None:
             raise TimeoutError("No response from purpledrop to GPIO read request")
         else:
@@ -919,8 +920,7 @@ class PurpleDropController(object):
             msg.payload = table[tx_pos:tx_pos+tx_size]
             tx_pos += tx_size
             with self.purpledrop.get_sync_listener(messages.CommandAckMsg) as listener:
-                self.purpledrop.send_message(msg)
-                ack = listener.next(timeout=0.5)
+                ack = self.__request_with_retry(msg, listener, timeout=0.5)
             if ack is None:
                 raise TimeoutError("No ACK while setting electrode calibration")
 
