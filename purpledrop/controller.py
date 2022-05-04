@@ -689,7 +689,7 @@ class PurpleDropController(object):
 
         match = lambda m: isinstance(m, messages.CommandAckMsg) and m.acked_id == messages.ElectrodeEnableMsg.ID
 
-            with self.purpledrop.get_sync_listener(match) as listener:
+        with self.purpledrop.get_sync_listener(match) as listener:
             ack = self.__request_with_retry(msg, listener, timeout=0.5)
 
         if ack is None:
