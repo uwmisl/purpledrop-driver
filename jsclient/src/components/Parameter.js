@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import NumericInput from 'react-numeric-input';
+import NumericInput from 'react-numeric-input2';
 
 class Parameter extends React.Component {
   constructor(props) {
