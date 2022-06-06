@@ -70,7 +70,7 @@ class CapacitanceDisplay extends React.Component {
 
     let electrodeAspectRatio = (extent.maxX - extent.minX) / (extent.maxY - extent.minY);
     let message = "Mouse-over for electrode capacitance";
-    if(this.state.mouseOverPin) {
+    if(this.state.mouseOverPin !== null) {
       let capacitance = this.props.capacitance[this.state.mouseOverPin];
       let measurement = "NA";
       let raw = '';
