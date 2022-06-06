@@ -29,6 +29,9 @@
     stroke-width: 7px;
 }
 
+.liveviewOptionBox {
+    padding-left: 1em;
+}
 
 button.brushsize {
     font-size: larger;

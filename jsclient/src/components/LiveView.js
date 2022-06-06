@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import ElectrodeSvg from './ElectrodeSvg';
 
 import './LiveView.css';
+import { FormGroup, FormControlLabel, Checkbox } from '@material-ui/core';
 
 class LiveView extends React.Component {
     constructor(props) {
@@ -11,7 +12,11 @@ class LiveView extends React.Component {
         this.state = {
             brushSize: 1,
             hoverPins: [],
+            showOverlay: true,
+            showVideo: true,
         };
+        this.showOverlayChanged = this.showOverlayChanged.bind(this);
+        this.showVideoChanged = this.showVideoChanged.bind(this);
         this.decrementBrushSize = this.decrementBrushSize.bind(this);
         this.incrementBrushSize = this.incrementBrushSize.bind(this);
         this.onMouseOver = this.onMouseOver.bind(this);
@@ -26,6 +31,14 @@ class LiveView extends React.Component {
 
     componentWillUnmount() {
         window.removeEventListener('keydown', this.onKeyDown);
+    }
+
+    showOverlayChanged(event) {
+        this.setState({ showOverlay: event.target.checked });
+    }
+
+    showVideoChanged(event) {
+        this.setState({ showVideo: event.target.checked });
     }
 
     decrementBrushSize() {
@@ -177,24 +190,28 @@ class LiveView extends React.Component {
                         }
                         return <div style={{ position: 'relative', height: '100%' }}>
                             <div style={{position: 'absolute', width: width, height: height }}>
-                                <img
-                                    style={{ visibility: this.props.image ? 'visible' : 'hidden' , width: width, height: height}}
-                                    className='electrode-grid-img'
-                                    src={this.props.image || ''}
-                                />
-                                <ElectrodeSvg
-                                    svgId="electrode-grid-svg"
-                                    layout={this.props.layout}
-                                    transform={this.props.transform}
-                                    classMap={classMap}
-                                    width={width}
-                                    height={height}
-                                    imageWidth={this.props.imageWidth}
-                                    imageHeight={this.props.imageHeight}
-                                    onMouseOver={this.onMouseOver}
-                                    onMouseOut={this.onMouseOut}
-                                    onClick={this.onClick}
-                                />
+                                {this.state.showVideo &&
+                                    <img
+                                        style={{ visibility: this.props.image ? 'visible' : 'hidden' , width: width, height: height}}
+                                        className='electrode-grid-img'
+                                        src={this.props.image || ''}
+                                    />
+                                }
+                                {this.state.showOverlay &&
+                                    <ElectrodeSvg
+                                        svgId="electrode-grid-svg"
+                                        layout={this.props.layout}
+                                        transform={this.state.showVideo ? this.props.transform : null}
+                                        classMap={classMap}
+                                        width={width}
+                                        height={height}
+                                        imageWidth={this.props.imageWidth}
+                                        imageHeight={this.props.imageHeight}
+                                        onMouseOver={this.onMouseOver}
+                                        onMouseOut={this.onMouseOut}
+                                        onClick={this.onClick}
+                                    />
+                                }
                             </div>
                         </div>;
                     }}
@@ -202,9 +219,22 @@ class LiveView extends React.Component {
 
             </div>
             <div style={{padding: '5px'}} className="toolbar">
-                <button className="brushsize" onClick={() => this.decrementBrushSize()}>Smaller</button>
-                <input id="brushsize" type="text" disabled value={this.state.brushSize} name="brushsize" />
-                <button className="brushsize" onClick={() => this.incrementBrushSize()}>Bigger</button>
+                <FormGroup row={true}>
+                    <button className="brushsize" onClick={() => this.decrementBrushSize()}>Smaller</button>
+                    <input id="brushsize" type="text" disabled value={this.state.brushSize} name="brushsize" />
+                    <button className="brushsize" onClick={() => this.incrementBrushSize()}>Bigger</button>
+
+                    <FormControlLabel
+                        className="liveviewOptionBox"
+                        label="Show Overlay"
+                        control={<Checkbox defaultChecked onChange={this.showOverlayChanged} />}
+                    />
+                    <FormControlLabel
+                        className="liveviewOptionBox"
+                        label="Show Video"
+                        control={<Checkbox defaultChecked onChange={this.showVideoChanged}/>}
+                    />
+                </FormGroup>
             </div>
         </div>;
     }
