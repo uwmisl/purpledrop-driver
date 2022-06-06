@@ -64,6 +64,7 @@ class Parameter extends React.Component {
 }
 
 Parameter.propTypes = {
+  description: PropTypes.string,
   id: PropTypes.number,
   name: PropTypes.string,
   value: PropTypes.number,

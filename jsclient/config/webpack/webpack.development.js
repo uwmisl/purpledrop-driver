@@ -12,14 +12,14 @@ module.exports = {
     mode: 'development',
     devtool: 'cheap-module-source-map',
     devServer: {
-        after: function() {
+        onListening: function() {
             httpProxy.createServer({
                 target: `ws://${pdserverHost}:7001`,
                 ws: true
             }).listen(7001);      
         },
         hot: true,
-        contentBase: paths.outputPath,
+        static: paths.outputPath,
         port: 3000,
         proxy: {
             '/rpc': `http://${pdserverHost}:7000`,
